@@ -29,6 +29,7 @@ public class ValidationStatusResponse {
     @Data
     public static class Result {
         public enum Type {OPEN, FAILED, PASSED}
+        public enum ResultType { CHK, OK, NOK }
 
         /**
          * Identifier of the check
@@ -37,7 +38,7 @@ public class ValidationStatusResponse {
         /**
          * Result of the check
          */
-        private String result;
+        private ResultType result;
         /**
          * Type of the check
          */

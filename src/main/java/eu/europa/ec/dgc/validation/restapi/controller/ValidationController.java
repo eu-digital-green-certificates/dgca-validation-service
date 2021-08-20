@@ -39,9 +39,8 @@ public class ValidationController {
             description = "The validation status endpoint provides the validation result of a subject. " +
                     "This endpoint is just reachable over a private connection of the service backend"
     )
-    @GetMapping(value = "/status/{subject}")
-    // TODO Response needs to be JWT Token
-    public ResponseEntity<ValidationStatusResponse> checkValidationStatus(@PathVariable String subject) {
+    @GetMapping(value = "/status/{subject}", produces = "application/jwt")
+    public ResponseEntity<String> checkValidationStatus(@PathVariable String subject) {
         return ResponseEntity.ok(validationService.checkValidationStatus(subject));
     }
 }
