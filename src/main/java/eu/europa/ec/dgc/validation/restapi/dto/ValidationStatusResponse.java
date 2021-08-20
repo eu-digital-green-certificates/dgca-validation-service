@@ -1,0 +1,50 @@
+package eu.europa.ec.dgc.validation.restapi.dto;
+
+import java.util.List;
+import lombok.Data;
+
+/**
+ * Payload of validation response jwt token.
+ */
+@Data
+public class ValidationStatusResponse {
+    /**
+     *
+     */
+    private String issuer;
+    /**
+     * Number of seconds since epoch
+     */
+    private int iat;
+    /**
+     * Value of the access token
+     */
+    private String sub;
+    private List<Result> results;
+    /**
+     * JWT string
+     */
+    private String confirmation;
+
+    @Data
+    public static class Result {
+        public enum Type {OPEN, FAILED, PASSED}
+
+        /**
+         * Identifier of the check
+         */
+        private String identifier;
+        /**
+         * Result of the check
+         */
+        private String result;
+        /**
+         * Type of the check
+         */
+        private Type type;
+        /**
+         * Description of the checkup
+         */
+        private String details;
+    }
+}

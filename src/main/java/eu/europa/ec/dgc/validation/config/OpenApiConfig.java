@@ -23,6 +23,7 @@ package eu.europa.ec.dgc.validation.config;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import java.util.Optional;
 import lombok.Generated;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.info.BuildProperties;
@@ -34,7 +35,7 @@ import org.springframework.context.annotation.Configuration;
 @RequiredArgsConstructor
 public class OpenApiConfig {
 
-    private final BuildProperties buildProperties;
+    private final Optional<BuildProperties> buildProperties;
 
     /**
      * Configure the OpenApi bean with title and version.
@@ -43,12 +44,19 @@ public class OpenApiConfig {
      */
     @Bean
     public OpenAPI openApi() {
+        String version;
+        if (buildProperties.isPresent()) {
+            version = buildProperties.get().getVersion();
+        } else {
+            // build properties is not available if starting from IDE without running mvn before (so fake this)
+            version = "dev";
+        }
         return new OpenAPI()
             .info(new Info()
                 .title("EU Digital COVID Certificate Validation Service")
                 .description("The API provides functionalities for validating  "
                     + "EU digital COVID certificates.")
-                .version(buildProperties.getVersion())
+                .version(version)
                 .license(new License()
                     .name("Apache 2.0")
                     .url("https://www.apache.org/licenses/LICENSE-2.0")));
