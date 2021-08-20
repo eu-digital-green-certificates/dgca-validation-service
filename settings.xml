@@ -8,5 +8,10 @@
       <username>${app.packages.username}</username>
       <password>${app.packages.password}</password>
     </server>
+    <server>
+      <id>ehd-github</id>
+      <username>${app.packages.username}</username>
+      <password>${app.packages.password}</password>
+    </server>
   </servers>
 </settings>
