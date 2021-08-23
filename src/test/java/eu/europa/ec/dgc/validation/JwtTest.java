@@ -36,6 +36,34 @@ class JwtTest {
         System.out.println(jwtString);
 
         Jwt token = Jwts.parser().setSigningKey(keyPair.getPublic()).parse(jwtString);
+
+        System.out.println(token);
+
+    }
+
+    @Test
+    void enryptDataJwt() throws Exception {
+        KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
+        keyPairGen.initialize(256);
+        KeyPair keyPair = keyPairGen.generateKeyPair();
+
+        List<ValidationStatusResponse.Result> results = new ArrayList<>();
+        ValidationStatusResponse.Result result = new ValidationStatusResponse.Result();
+        result.setResult(ValidationStatusResponse.Result.ResultType.OK);
+        results.add(result);
+
+        String jwtString = Jwts.builder().claim("test","test")
+                .setHeaderParam("kid","kid")
+                .setHeaderParam("typ","JWT")
+                .setIssuedAt(new Date())
+                .setIssuer("issuer")
+                .setSubject("sub").claim("confirmation","confirmation-jwt")
+                .claim("results",results)
+                .signWith(SignatureAlgorithm.ES256,keyPair.getPrivate())
+                .compact();
+        System.out.println(jwtString);
+
+        Jwt token = Jwts.parser().setSigningKey(keyPair.getPublic()).parse(jwtString);
         System.out.println(token);
 
     }

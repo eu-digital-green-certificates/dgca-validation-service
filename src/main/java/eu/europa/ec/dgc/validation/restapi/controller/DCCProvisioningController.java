@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,7 +30,8 @@ public class DCCProvisioningController {
     )
     @PostMapping(value = "/validate", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> initValidation(
-            @Valid @RequestBody DccValidationRequest dccValidationRequest) {
-        return ResponseEntity.ok(validationService.validate(dccValidationRequest));
+            @Valid @RequestBody DccValidationRequest dccValidationRequest,
+            @RequestHeader("Authorization") String accessToken) {
+        return ResponseEntity.ok(validationService.validate(dccValidationRequest, accessToken));
     }
 }
