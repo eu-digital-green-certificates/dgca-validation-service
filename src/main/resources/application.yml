@@ -52,6 +52,7 @@ dgc:
   certificatesDownloader:
     timeInterval: 1800000
     lockLimit: 3600000
+  serviceUrl: https://validation-service/
 
 
 

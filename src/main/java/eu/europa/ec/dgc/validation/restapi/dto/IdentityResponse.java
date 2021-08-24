@@ -7,6 +7,4 @@ import lombok.Data;
 public class IdentityResponse {
     String Id;
     List<VerificationMethod> verificationMethod;
-    List<ServiceDescription> service;
-
 }
