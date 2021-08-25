@@ -8,5 +8,5 @@ public class VerificationMethod {
     String Id;
     String type;
     String controller;
-    JsonNode publicKeyJWK;
+    PublicKeyJWK publicKeyJWK;
 }

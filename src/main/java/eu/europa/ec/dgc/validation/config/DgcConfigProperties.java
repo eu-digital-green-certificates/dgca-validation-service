@@ -50,4 +50,9 @@ public class DgcConfigProperties {
     private Duration validationExpire = Duration.ofMinutes(60);
 
     private String serviceUrl;
+
+    private String keyStoreFile;
+    private String keyStorePassword;
+    private String privateKeyPassword;
+
 }

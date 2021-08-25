@@ -21,6 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
+        <dgclib.version>0.4.0</dgclib.version>
         <owasp.version>6.1.6</owasp.version>
         <spring.boot.version>2.5.3</spring.boot.version>
         <spring.cloud.version>2020.0.3</spring.cloud.version>
@@ -135,6 +136,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>eu.europa.ec.dgc</groupId>
+            <artifactId>dgc-lib</artifactId>
+            <version>${dgclib.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
@@ -240,6 +246,11 @@
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>9.9.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>${bcpkix.version}</version>
         </dependency>
     </dependencies>
 

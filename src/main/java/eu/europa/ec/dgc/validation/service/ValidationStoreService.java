@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 public class ValidationStoreService {
     private HashMap<String,ValidationInquiry> validationStore = new HashMap<>();
 
-    public void storeValidation(ValidationInquiry validationInquiry) {
+    public void storeValidation(ValidationInquiry validationInquiry, long expirationTime) {
         validationStore.put(validationInquiry.getSubject(),validationInquiry);
     }
 
@@ -20,4 +20,7 @@ public class ValidationStoreService {
         return validationStore.get(subject);
     }
 
+    public void updateValidation(ValidationInquiry validationInquiry) {
+        validationStore.put(validationInquiry.getSubject(),validationInquiry);
+    }
 }

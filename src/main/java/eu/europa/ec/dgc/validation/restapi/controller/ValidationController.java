@@ -38,7 +38,8 @@ public class ValidationController {
             @ApiResponse(responseCode = "201", description = "signature created"),
             @ApiResponse(responseCode = "401", description = "Unauthorized, if no client certificate was matched"),
             @ApiResponse(responseCode = "400", description = "Response Body with Error Details.")})
-    @PostMapping(value = "/initialize", consumes = MediaType.APPLICATION_JSON_VALUE, produces = "application/jwt")
+    @PostMapping(value = "/initialize", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ValidationInitResponse> initValidation(
             @Valid @RequestBody ValidationInitRequest validationInitRequest) {
         return ResponseEntity.ok(validationService.initValidation(validationInitRequest));
