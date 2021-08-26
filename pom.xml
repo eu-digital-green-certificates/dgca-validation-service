@@ -36,7 +36,9 @@
     	<bcpkix.version>1.68</bcpkix.version>
     	<okhttp.version>4.9.1</okhttp.version>
     	<shedlock.version>4.25.0</shedlock.version>
+
         <dgc-certlogic.version>0.0.0-3834d93</dgc-certlogic.version>
+        <dgc-decoder.version>0.1</dgc-decoder.version>
         <!-- plugins -->
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.sonar.version>3.9.0.2155</plugin.sonar.version>
@@ -236,6 +238,11 @@
             <groupId>eu.europa.ec.dgc</groupId>
             <artifactId>dgc-certlogic</artifactId>
             <version>${dgc-certlogic.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.europa.ec.dgc</groupId>
+            <artifactId>dgc-decoder</artifactId>
+            <version>${dgc-decoder.version}</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
