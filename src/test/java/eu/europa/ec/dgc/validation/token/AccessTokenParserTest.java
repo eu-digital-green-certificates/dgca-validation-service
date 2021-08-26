@@ -3,6 +3,9 @@ package eu.europa.ec.dgc.validation.token;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
+import eu.europa.ec.dgc.validation.service.ValidationServiceTest;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.time.Instant;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -43,11 +46,13 @@ class AccessTokenParserTest {
 
         accessTokenPayload.setConditions(accessTokenConditions);
 
-        String accessTokenCompact = accessTokenBuilder.payload(accessTokenPayload).build(null, "kid");
+        PrivateKey privateKey = ValidationServiceTest.parsePrivateKey(ValidationServiceTest.EC_PRIVATE_KEY);
+        String accessTokenCompact = accessTokenBuilder.payload(accessTokenPayload).build(privateKey, "kid");
 
         System.out.println(accessTokenCompact);
 
-        AccessTokenPayload accessTokenParsed = accessTokenParser.parseToken(accessTokenCompact);
+        PublicKey publicKey = ValidationServiceTest.parsePublicKey(ValidationServiceTest.EC_PUBLIC_KEY);
+        AccessTokenPayload accessTokenParsed = accessTokenParser.parseToken(accessTokenCompact, publicKey);
         assertNotNull(accessTokenParsed);
         assertNotNull(accessTokenParsed.getConditions());
     }

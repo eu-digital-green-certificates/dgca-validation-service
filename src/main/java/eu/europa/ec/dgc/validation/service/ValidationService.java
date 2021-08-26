@@ -3,23 +3,33 @@ package eu.europa.ec.dgc.validation.service;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
+import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.token.AccessTokenBuilder;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.impl.DefaultClaims;
 import io.jsonwebtoken.impl.DefaultJwt;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
+import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -31,6 +41,9 @@ public class ValidationService {
     private final KeyProvider keyProvider;
     private final DccValidator dccValidator;
     private final AccessTokenParser accessTokenParser;
+    private final DccCrypt dccCrypt;
+    private final DccSign dccSign;
+    private final AccessTokenKeyProvider accessTokenKeyProvider;
 
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
@@ -52,12 +65,15 @@ public class ValidationService {
     }
 
     public String validate(DccValidationRequest dccValidationRequest, String accessTokenCompact) {
-        AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact);
+        AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey("TODO","TODO"));
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;
         if (validationInquiry!=null) {
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);
+            if (!checkSignature(dcc,dccValidationRequest,validationInquiry.getPublicKey())) {
+                throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
+            }
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
             List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions());
             resultTokenBuilder.results(results);
@@ -72,7 +88,30 @@ public class ValidationService {
         return resultToken;
     }
 
+    private boolean checkSignature(String dcc, DccValidationRequest dccValidationRequest, String publicKeyBase64) {
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+            X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+            KeyFactory kf = KeyFactory.getInstance("EC");
+            PublicKey publicKey = kf.generatePublic(spec);
+            return dccSign.verifySignature(dcc, dccValidationRequest.getSig(), publicKey);
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new DccException("can not initialize signature validation",e);
+        }
+    }
+
     private String decodeDcc(DccValidationRequest dccValidationRequest, ValidationInquiry validationInquiry) {
-        return null;
+        String dcc;
+        switch (dccValidationRequest.getEncScheme()) {
+            case DccCrypt.ENC_SCHEMA:
+                DccCrypt.EncryptedData encryptedData = new DccCrypt.EncryptedData();
+                encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
+                encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
+                dcc = new String(dccCrypt.decryptData(encryptedData,keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey)), StandardCharsets.UTF_8);
+                break;
+            default:
+                throw new DccException("unsupported dcc encryption schema "+dccValidationRequest.getEncScheme());
+        }
+        return dcc;
     }
 }

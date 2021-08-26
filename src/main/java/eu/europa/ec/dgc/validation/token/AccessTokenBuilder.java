@@ -32,9 +32,8 @@ public class AccessTokenBuilder {
 
     public String build(PrivateKey privateKey, String kid) {
         return builder
-                // TODO non signed access token
-                //.setHeaderParam("kid",kid)
-                //.signWith(SignatureAlgorithm.ES256, privateKey)
+                .setHeaderParam("kid",kid)
+                .signWith(SignatureAlgorithm.ES256, privateKey)
                 .compact();
     }
 }

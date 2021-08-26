@@ -49,7 +49,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemReportDto> handleException(DccException e) {
         log.error(e.getMessage());
         return ResponseEntity
-            .status(HttpStatus.NOT_FOUND)
+            .status(e.getStatus())
             .contentType(MediaType.APPLICATION_JSON)
             .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
     }

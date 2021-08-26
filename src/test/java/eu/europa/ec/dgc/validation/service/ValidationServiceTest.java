@@ -14,15 +14,20 @@ import io.jsonwebtoken.Jwts;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Random;
@@ -48,11 +53,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Slf4j
-class ValidationServiceTest {
-    public static final String DCC_CRYPT_ALG = "ECIESwithAES-CBC";
-    private final String sigAlg = "SHA256withECDSA";
-    public static final String KEY_CIPHER = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
-    public static final String DATA_CIPHER = "AES/CBC/PKCS5Padding";
+public class ValidationServiceTest {
+
+    public final static String EC_PRIVATE_KEY = "MEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCBSuPIbykwH24sjQsT" +
+            "neeN6EyjiA1NK5W7uca+HxmGmWw==";
+    public final static String EC_PUBLIC_KEY = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIPrtYsW9+Juwp/mt7h8FJ3LgFRIU" +
+            "l2Vlmcl1DUm5gNHl0LnHIL4Jff6mg6yVhehdQiMvkhUtTvmFIUWONSJEnw==";
 
     private final String subject = "junit";
 
@@ -61,6 +67,12 @@ class ValidationServiceTest {
 
     @Autowired
     KeyProvider keyProvider;
+
+    @Autowired
+    DccCrypt dccCrypt;
+
+    @Autowired
+    DccSign dccSign;
 
     AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder();
 
@@ -85,7 +97,7 @@ class ValidationServiceTest {
         encodeDcc(dcc, dccValidationRequest);
         String dccSign = signDcc(dcc,keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
-        dccValidationRequest.setSigAlg(sigAlg);
+        dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
@@ -98,7 +110,30 @@ class ValidationServiceTest {
 
     }
 
-    private String createAccessTocken() {
+    static public PublicKey parsePublicKey(String publicKeyBase64) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("EC");
+        return kf.generatePublic(spec);
+    }
+
+    static public PrivateKey parsePrivateKey(String privateKeyBase64) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance("EC");
+        return kf.generatePrivate(spec);
+    }
+
+
+    private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest) {
+        DccCrypt.EncryptedData enryptedData = dccCrypt.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
+                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey());
+        dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(enryptedData.getDataEncrypted()));
+        dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(enryptedData.getEncKey()));
+        dccValidationRequest.setEncScheme(dccCrypt.getEncSchema());
+    }
+
+    private String createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {
         AccessTokenPayload accessTokenPayload = new AccessTokenPayload();
         accessTokenPayload.setSub(subject);
         accessTokenPayload.setIss("iss");
@@ -123,50 +158,11 @@ class ValidationServiceTest {
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
 
-        return accessTokenBuilder.payload(accessTokenPayload).build(null,"kid");
+        return accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
     }
 
-    private String signDcc(String dcc, PrivateKey privateKey) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        Signature signature = Signature.getInstance(sigAlg);
-        signature.initSign(privateKey);
-        signature.update(dcc.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(signature.sign());
+    private String signDcc(String dcc, PrivateKey privateKey)  {
+        return dccSign.signDcc(dcc, privateKey);
     }
 
-    private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        // https://cryptobook.nakov.com/asymmetric-key-ciphers/exercises-ecies-encrypt-decrypt
-
-        byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
-        byte[] encoding = Hex.decode("303132333435363738393a3b3c3d3e3f");
-        byte[] nonce = Hex.decode("000102030405060708090a0b0c0d0e0f");
-        IESParameterSpec params = new IESParameterSpec(derivation, encoding, 128, 128, nonce, true);
-
-        // encrypt dcc
-        Cipher keyCipher = Cipher.getInstance(DCC_CRYPT_ALG);
-        keyCipher.init(Cipher.ENCRYPT_MODE, keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(),params);
-        byte[] dccBytes = dcc.getBytes(StandardCharsets.UTF_8);
-        byte[] encodedBytes = keyCipher.doFinal(dccBytes);
-        dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encodedBytes));
-        dccValidationRequest.setEncScheme(DCC_CRYPT_ALG);
-
-        Cipher decryptCipher = Cipher.getInstance(DCC_CRYPT_ALG);
-        decryptCipher.init(Cipher.DECRYPT_MODE, keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),params);
-        byte[] dccBytesDecoded = decryptCipher.doFinal(encodedBytes);
-        assertArrayEquals(dccBytes,dccBytesDecoded);
-
-        byte[] data256 = new byte[256/8];
-        Random random = new Random();
-        random.nextBytes(data256);
-
-        Cipher ecEncrypt = Cipher.getInstance("ECIES");
-        ecEncrypt.init(Cipher.ENCRYPT_MODE, keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey());
-        byte[] outData = ecEncrypt.doFinal(data256);
-
-        Cipher ecDecrypt = Cipher.getInstance("ECIES");
-        ecDecrypt.init(Cipher.DECRYPT_MODE, keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey));
-        byte[] outDataDecrypt = ecDecrypt.doFinal(outData);
-        assertArrayEquals(data256, outDataDecrypt);
-
-
-    }
 }
