@@ -41,7 +41,7 @@ public class ShedLockConfig {
     @Bean
     public LockProvider lockProvider(DataSource dataSource) {
         return new JdbcTemplateLockProvider(builder()
-            .withTableName("shedlock_br")
+            .withTableName("shedlock_vs")
             .withJdbcTemplate(new JdbcTemplate(dataSource))
             .usingDbTime()
             .build()

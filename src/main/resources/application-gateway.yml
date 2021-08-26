@@ -1,0 +1,19 @@
+dgc:
+  gateway:
+    connector:
+      enabled: true
+      endpoint: https://test-dgcg-ws.tech.ec.europa.eu
+      proxy:
+        enabled: false
+      max-cache-age: 300
+      tls-trust-store:
+        password: dgcg-p4ssw0rd
+        path: file:/Users/slaurenz/Projekte/2021/EGCG/certs/dgcg_tst_digit.p12
+      tls-key-store:
+        alias: 1
+        password: dgcg-p4ssw0rd
+        path: file:/Users/slaurenz/Projekte/2021/EGCG/certs/dgcg_tst_auth.p12
+      trust-anchor:
+        alias: ta_tst
+        password: dgcg-p4ssw0rd
+        path: file:/Users/slaurenz/Projekte/2021/EGCG/certs/ta_tst.jks

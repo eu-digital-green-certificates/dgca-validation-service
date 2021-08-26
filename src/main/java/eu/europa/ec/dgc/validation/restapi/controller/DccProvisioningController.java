@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 @AllArgsConstructor
-public class DCCProvisioningController {
+public class DccProvisioningController {
     private  final ValidationService validationService;
 
     @Operation(
-            summary = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The\n" +
-                    "endpoint receives the encrypted DCC, validates it and creates the result for the subject.",
-            description = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The\n" +
-                    "endpoint receives the encrypted DCC, validates it and creates the result for the subject."
+            summary = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The "
+                + "endpoint receives the encrypted DCC, validates it and creates the result for the subject.",
+            description = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The "
+                + "endpoint receives the encrypted DCC, validates it and creates the result for the subject."
     )
     @PostMapping(value = "/validate", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> initValidation(
