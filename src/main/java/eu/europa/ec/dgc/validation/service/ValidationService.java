@@ -5,17 +5,13 @@ import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
+import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
-import eu.europa.ec.dgc.validation.token.AccessTokenBuilder;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.impl.DefaultClaims;
-import io.jsonwebtoken.impl.DefaultJwt;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +20,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +70,7 @@ public class ValidationService {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
             }
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
-            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions());
+            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.Structure);
             resultTokenBuilder.results(results);
             resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(KeyType.ValidationServiceSignKey),
                     keyProvider.getKid(KeyType.ValidationServiceSignKey));
