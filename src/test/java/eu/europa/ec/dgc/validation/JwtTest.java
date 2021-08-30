@@ -8,6 +8,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,8 @@ class JwtTest {
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
         keyPairGen.initialize(256);
         KeyPair keyPair = keyPairGen.generateKeyPair();
+        System.out.println("public: "+Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+        System.out.println("private: "+Base64.getEncoder().encodeToString(keyPair.getPrivate().getEncoded()));
 
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
         ValidationStatusResponse.Result result = new ValidationStatusResponse.Result();
@@ -36,6 +39,7 @@ class JwtTest {
         System.out.println(jwtString);
 
         Jwt token = Jwts.parser().setSigningKey(keyPair.getPublic()).parse(jwtString);
+
         System.out.println(token);
 
     }

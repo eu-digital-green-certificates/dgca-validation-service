@@ -55,6 +55,11 @@ dgc:
   valueSetsDownload:
     timeInterval: 1800000
     lockLimit: 3600000
+  serviceUrl: https://validation-service.de
+  keyStoreFile: certs/dev-test.jks
+  keyStorePassword: dcc
+  privateKeyPassword: dcc
+
 
 
 

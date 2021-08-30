@@ -14,7 +14,7 @@ public class ValidationInitResponse {
      * Number of seconds since January.
      * 1, 1970
      */
-    private int exp;
+    private long exp;
     /**
      * Validation URL.
      */
