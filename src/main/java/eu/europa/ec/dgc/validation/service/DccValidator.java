@@ -8,17 +8,27 @@ import dgca.verifier.app.decoder.cbor.GreenCertificateData;
 import dgca.verifier.app.decoder.compression.CompressorService;
 import dgca.verifier.app.decoder.compression.DefaultCompressorService;
 import dgca.verifier.app.decoder.cose.CoseService;
+import dgca.verifier.app.decoder.cose.CryptoService;
 import dgca.verifier.app.decoder.cose.DefaultCoseService;
+import dgca.verifier.app.decoder.cose.VerificationCryptoService;
 import dgca.verifier.app.decoder.model.CoseData;
 import dgca.verifier.app.decoder.model.VerificationResult;
 import dgca.verifier.app.decoder.prefixvalidation.DefaultPrefixValidationService;
 import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
 import dgca.verifier.app.decoder.schema.DefaultSchemaValidator;
 import dgca.verifier.app.decoder.schema.SchemaValidator;
+import dgca.verifier.app.decoder.services.X509;
+import dgca.verifier.app.engine.DateTimeKt;
+import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +45,9 @@ public class DccValidator {
     private CoseService coseService = new DefaultCoseService();
     private CborService cborService = new DefaultCborService();
     private SchemaValidator schemaValidator = new DefaultSchemaValidator();
+    private X509 x509 = new X509();
+    private CryptoService cryptoService = new VerificationCryptoService(x509);
+    private final SignerInformationService signerInformationService;
 
     public List<ValidationStatusResponse.Result> validate(String dcc, AccessTokenConditions accessTokenConditions, AccessTokenType accessTokenType) {
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
@@ -83,7 +96,7 @@ public class DccValidator {
         }
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                 ValidationStatusResponse.Result.Type.PASSED, "Structure", "OK");
-        validateGreenCertificateData(greenCertificateData, results);
+        validateGreenCertificateData(greenCertificateData, accessTokenConditions, results);
         if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
             validateCryptograpic(cose, coseData.getKid(), verificationResult, results);
             if (accessTokenType==AccessTokenType.Full) {
@@ -103,11 +116,74 @@ public class DccValidator {
     }
 
     private void validateCryptograpic(byte[] cose, byte[] kid, VerificationResult verificationResult, List<ValidationStatusResponse.Result> results) {
-        // TODO implement signarure validation here
+        ZonedDateTime currentTime = ZonedDateTime.now().withZoneSameInstant(DateTimeKt.getUTC_ZONE_ID());
+        String kidBase64 = Base64.getEncoder().encodeToString(kid);
+        List<Certificate> certificates = signerInformationService.getCertificates(kidBase64);
+        if (certificates!=null && certificates.size()>0) {
+            boolean signValidated = false;
+            for (Certificate certificate : certificates) {
+                cryptoService.validate(cose, certificate, verificationResult);
+                if (verificationResult.getCoseVerified()) {
+                    ZonedDateTime expirationTime = (certificate instanceof X509Certificate) ?
+                            ((X509Certificate) certificate).getNotAfter().toInstant().atZone(DateTimeKt.getUTC_ZONE_ID())
+                            : null;
+                    if (expirationTime != null && currentTime.isAfter(expirationTime)) {
+                        addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                                ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "certificate expired");
+                    }
+                    signValidated = true;
+                    break;
+                }
+            }
+            if (!signValidated) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                        ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "signature invalid");
+            } else {
+                addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                        ValidationStatusResponse.Result.Type.PASSED, "cryptographic", "signature valid");
+            }
+        } else {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "unknown dcc signing kid");
+        }
     }
 
-    private void validateGreenCertificateData(GreenCertificateData greenCertificateData, List<ValidationStatusResponse.Result> results) {
-
+    private void validateGreenCertificateData(GreenCertificateData greenCertificateData, AccessTokenConditions accessTokenConditions, List<ValidationStatusResponse.Result> results) {
+        if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName()==null ||
+        !greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName().equals(accessTokenConditions.getFnt())) {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ValidationStatusResponse.Result.Type.FAILED,"Data check","family name does not match");
+        }
+        if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedGivenName()==null ||
+                !greenCertificateData.getGreenCertificate().getPerson().getStandardisedGivenName().equals(accessTokenConditions.getGnt())) {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ValidationStatusResponse.Result.Type.FAILED,"Data check","given name does not match");
+        }
+        if (greenCertificateData.getGreenCertificate().getDateOfBirth()==null ||
+                !greenCertificateData.getGreenCertificate().getDateOfBirth().equals(accessTokenConditions.getDob())) {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ValidationStatusResponse.Result.Type.FAILED,"Data check","data of birth does not match");
+        }
+        String certTypeSymbol;
+        switch (greenCertificateData.getGreenCertificate().getType()) {
+            case RECOVERY:
+                certTypeSymbol = "r";
+                break;
+            case TEST:
+                certTypeSymbol = "t";
+                break;
+            case VACCINATION:
+                certTypeSymbol = "v";
+                break;
+            default:
+                throw new DccException("unsupported cert type");
+        }
+        if (accessTokenConditions.getType()!=null) {
+            if (!Arrays.asList(accessTokenConditions.getType()).contains(certTypeSymbol)) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                      ValidationStatusResponse.Result.Type.FAILED,"cert type","required cert type not provided");
+            }
+        }
     }
 
     private void addResult(List<ValidationStatusResponse.Result> results, ValidationStatusResponse.Result.ResultType resultType,

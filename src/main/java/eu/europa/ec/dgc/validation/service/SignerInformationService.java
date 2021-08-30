@@ -25,8 +25,10 @@ import eu.europa.ec.dgc.gateway.connector.model.TrustListItem;
 import eu.europa.ec.dgc.validation.entity.SignerInformationEntity;
 import eu.europa.ec.dgc.validation.repository.SignerInformationRepository;
 import eu.europa.ec.dgc.validation.restapi.dto.KidDto;
+import java.security.cert.Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -55,6 +57,11 @@ public class SignerInformationService {
         } else {
             return signerInformationRepository.findFirstByIdGreaterThanOrderByIdAsc(resumeToken);
         }
+    }
+
+    public List<Certificate> getCertificates(String kid) {
+        // TODO return list of matching certificates
+        return Collections.emptyList();
     }
 
 
