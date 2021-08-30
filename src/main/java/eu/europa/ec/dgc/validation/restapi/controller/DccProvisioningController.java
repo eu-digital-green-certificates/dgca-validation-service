@@ -22,15 +22,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/")
 @AllArgsConstructor
-public class DCCProvisioningController {
+public class DccProvisioningController {
     private  final ValidationService validationService;
     private static final String TOKEN_PREFIX = "Bearer ";
 
     @Operation(
-            summary = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The\n" +
-                    "endpoint receives the encrypted DCC, validates it and creates the result for the subject.",
-            description = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The\n" +
-                    "endpoint receives the encrypted DCC, validates it and creates the result for the subject."
+            summary = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The "
+                + "endpoint receives the encrypted DCC, validates it and creates the result for the subject.",
+            description = "The provision endpoint is the public endpoint where DCCs can be provided for a subject. The "
+                + "endpoint receives the encrypted DCC, validates it and creates the result for the subject."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),

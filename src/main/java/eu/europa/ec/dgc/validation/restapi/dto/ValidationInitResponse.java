@@ -6,17 +6,17 @@ import lombok.Data;
 @Data
 public class ValidationInitResponse {
     /**
-     * Hexadecimal-encoded value
+     * Hexadecimal-encoded value.
      */
     @NotNull
     private String subject;
     /**
-     * Number of seconds since January
+     * Number of seconds since January.
      * 1, 1970
      */
     private long exp;
     /**
-     * Validation URL
+     * Validation URL.
      */
     @NotNull
     private String aud;

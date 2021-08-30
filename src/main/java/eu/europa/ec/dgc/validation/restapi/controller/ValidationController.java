@@ -30,9 +30,10 @@ public class ValidationController {
 
     @Operation(
             summary = "validation initialization",
-            description = "The validation initialization endpoint delivers to a subject and a public key, an initialization\n" +
-                    "information to indicate to which audience the DCC has to be delivered and when this audience\n" +
-                    "expires. Within this lifetime the validation is able to receive and validate a DCC for this subject"
+            description = "The validation initialization endpoint delivers to a subject and a public key, "
+                + "an initialization\ninformation to indicate to which audience the DCC has to be delivered "
+                + "and when this audience\nexpires. Within this lifetime the validation is able to receive "
+                + "and validate a DCC for this subject"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "signature created"),
@@ -47,8 +48,8 @@ public class ValidationController {
 
     @Operation(
             summary = "The validation status endpoint provides the validation result of a subject",
-            description = "The validation status endpoint provides the validation result of a subject. " +
-                    "This endpoint is just reachable over a private connection of the service backend"
+            description = "The validation status endpoint provides the validation result of a subject. "
+                + "This endpoint is just reachable over a private connection of the service backend"
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
