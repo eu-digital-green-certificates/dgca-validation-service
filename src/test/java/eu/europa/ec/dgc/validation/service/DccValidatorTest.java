@@ -1,20 +1,39 @@
 package eu.europa.ec.dgc.validation.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dgca.verifier.app.decoder.base45.Base45Service;
 import dgca.verifier.app.decoder.base45.DefaultBase45Service;
+import dgca.verifier.app.engine.AffectedFieldsDataRetriever;
+import dgca.verifier.app.engine.CertLogicEngine;
+import dgca.verifier.app.engine.DefaultCertLogicEngine;
+import dgca.verifier.app.engine.DefaultJsonLogicValidator;
+import dgca.verifier.app.engine.JsonLogicValidator;
+import dgca.verifier.app.engine.data.ValueSet;
 import eu.europa.ec.dgc.utils.CertificateUtils;
+import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
+import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
+import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.aspectj.lang.annotation.Before;
+import org.bouncycastle.jcajce.provider.digest.MD2;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,12 +45,24 @@ import static org.mockito.Mockito.mock;
 
 class DccValidatorTest {
     private SignerInformationService signerInformationService;
+    private BusinessRuleService businessRuleService;
     private DccValidator dccValidator;
+    private CertLogicEngine certLogicEngine;
+    private ValueSetService valueSetService;
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     public void setup() throws Exception {
+        objectMapper.registerModule(new JavaTimeModule());
         signerInformationService = mock(SignerInformationService.class);
-        dccValidator = new DccValidator(signerInformationService);
+        businessRuleService = mock(BusinessRuleService.class);
+        valueSetService = mock(ValueSetService.class);
+        AffectedFieldsDataRetriever affectedFieldsDataRetriever = mock(AffectedFieldsDataRetriever.class);
+        doReturn("").when(affectedFieldsDataRetriever).getAffectedFieldsData(any(), any(), any());
+        JsonLogicValidator jsonLogicValidator = new DefaultJsonLogicValidator();
+        certLogicEngine = new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
+        dccValidator = new DccValidator(signerInformationService, businessRuleService, certLogicEngine, valueSetService);
+        dccValidator.initMapper();
     }
 
     @Test
@@ -123,6 +154,59 @@ class DccValidatorTest {
         assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());
     }
 
+    @Test
+    void testDccRules() throws Exception {
+        mockDccCerts();
+        mockValueSets();
+        mockRules();
+        String dcc = "HC1:NCF970%90T9WTWGVLK879%EHLE7A1KW8HX*4.AB3XK3F3D86*743F3ZU5.FK1JC X8Y50.FK6ZK7:EDOLFVC*70B$D%" +
+                " D3IA4W5646646/96OA76KCN9E%961A69L6QW6B46XJCCWENF6OF63W5NW6-96WJCT3E6N8WJC0FD4:473DSDDF+AKG7RCBA69" +
+                "C6A41AZM8JNA5N8LN9VY91OASTA.H9MB8I6A946.JCP9EJY8L/5M/5546.96D46%JCKQE:+9 8D3KC.SC4KCD3DX47B46IL6646" +
+                "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
+                "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
+                "I*GS8%LXKBJW8:G6O5";
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Full);
+        for (ValidationStatusResponse.Result result : results) {
+            System.out.println(result);
+            assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
+            assertEquals(ValidationStatusResponse.Result.Type.PASSED,result.getType());
+        }
+        assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
+        assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());
+    }
+
+    private void mockRules() throws IOException {
+        List<BusinessRuleListItemDto> ruleListItemDtos = new ArrayList<>();
+        BusinessRuleListItemDto businessRuleListItemDto = new BusinessRuleListItemDto("junit","1.0.0","DE","junit");
+        ruleListItemDtos.add(businessRuleListItemDto);
+        BusinessRuleEntity businessRuleEntity = new BusinessRuleEntity();
+        businessRuleEntity.setHash("junit");
+        businessRuleEntity.setCountry("DE");
+        businessRuleEntity.setIdentifier("junit");
+        businessRuleEntity.setVersion("1.0.0");
+        businessRuleEntity.setRawData(Files.readString(Path.of("src/test/resources/testrule.json")));
+        doReturn(ruleListItemDtos).when(businessRuleService).getBusinessRulesListForCountry(anyString());
+        doReturn(businessRuleEntity).when(businessRuleService).getBusinessRuleByCountryAndHash(anyString(),anyString());
+    }
+
+    private void mockValueSets() throws IOException {
+        File valueSetDir = new File("src/test/resources/valuesets");
+        List<ValueSetListItemDto> valueSetListItemDtos = new ArrayList<>();
+        for (File valueSetFile : valueSetDir.listFiles()) {
+            if (!"valuesets.json".equals(valueSetFile.getName())) {
+                String id = valueSetFile.getName().substring(0,valueSetFile.getName().lastIndexOf('.'));
+                ValueSetListItemDto valueSetListItemDto = new ValueSetListItemDto(id,id);
+                valueSetListItemDtos.add(valueSetListItemDto);
+                ValueSetEntity valueSetEntity = new ValueSetEntity();
+                valueSetEntity.setId(id);
+                valueSetEntity.setHash(id);
+                valueSetEntity.setRawData(Files.readString(valueSetFile.toPath()));
+                doReturn(valueSetEntity).when(valueSetService).getValueSetByHash(id);
+            }
+        }
+        doReturn(valueSetListItemDtos).when(valueSetService).getValueSetsList();
+    }
+
     private void mockDccCerts() throws Exception {
         KeyStore keyStore = KeyStore.getInstance("JKS");
 
@@ -157,7 +241,7 @@ class DccValidatorTest {
         accessTokenConditions.setRoa("AW");
         accessTokenConditions.setRod("BW");
         accessTokenConditions.setType(new String[] {"v","t"});
-        accessTokenConditions.setValidationClock("2021-01-29T12:00:00+01:00");
+        accessTokenConditions.setValidationClock("2021-08-29T12:00:00+01:00");
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
         return accessTokenConditions;

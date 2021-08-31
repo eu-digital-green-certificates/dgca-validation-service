@@ -1,0 +1,17 @@
+{
+  "Identifier": "VR-DE-1",
+  "Version": "1.0.0",
+  "SchemaVersion":"1.0.0",
+  "Engine":"CERTLOGIC",
+  "EngineVersion":"1.0.0",
+  "Type":"Acceptance",
+  "Country":"DE",
+  "CertificateType":"Vaccination",
+  "Description":[{"lang":"en","desc":"Vaccination dn must be greater 1. Fake"}],
+  "ValidFrom":"2021-06-27T07:46:40Z",
+  "ValidTo":"2022-08-01T07:46:40Z",
+  "AffectedFields":["dn"],
+  "Logic":{
+      ">=":[ {"var": "payload.v.0.dn"} , 1 ]
+  }
+}

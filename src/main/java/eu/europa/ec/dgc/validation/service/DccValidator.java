@@ -1,5 +1,8 @@
 package eu.europa.ec.dgc.validation.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dgca.verifier.app.decoder.base45.Base45Service;
 import dgca.verifier.app.decoder.base45.DefaultBase45Service;
 import dgca.verifier.app.decoder.cbor.CborService;
@@ -18,21 +21,39 @@ import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
 import dgca.verifier.app.decoder.schema.DefaultSchemaValidator;
 import dgca.verifier.app.decoder.schema.SchemaValidator;
 import dgca.verifier.app.decoder.services.X509;
+import dgca.verifier.app.engine.CertLogicEngine;
 import dgca.verifier.app.engine.DateTimeKt;
+import dgca.verifier.app.engine.ValidationResult;
+import dgca.verifier.app.engine.data.CertificateType;
+import dgca.verifier.app.engine.data.ExternalParameter;
+import dgca.verifier.app.engine.data.Rule;
+import dgca.verifier.app.engine.data.ValueSet;
+import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
+import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
+import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
+import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
+import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
+import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -48,6 +69,15 @@ public class DccValidator {
     private X509 x509 = new X509();
     private CryptoService cryptoService = new VerificationCryptoService(x509);
     private final SignerInformationService signerInformationService;
+    private final BusinessRuleService businessRuleService;
+    private final CertLogicEngine certLogicEngine;
+    private final ValueSetService valueSetService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @PostConstruct
+    public void initMapper() {
+        objectMapper.registerModule(new JavaTimeModule());
+    }
 
     public List<ValidationStatusResponse.Result> validate(String dcc, AccessTokenConditions accessTokenConditions, AccessTokenType accessTokenType) {
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
@@ -98,9 +128,9 @@ public class DccValidator {
                 ValidationStatusResponse.Result.Type.PASSED, "Structure", "OK");
         validateGreenCertificateData(greenCertificateData, accessTokenConditions, results);
         if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
-            validateCryptograpic(cose, coseData.getKid(), verificationResult, results);
+            validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
             if (accessTokenType==AccessTokenType.Full) {
-                validateRules(greenCertificateData, verificationResult, results);
+                validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
             }
         }
         if (results.isEmpty()) {
@@ -111,12 +141,113 @@ public class DccValidator {
         return results;
     }
 
-    private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult, List<ValidationStatusResponse.Result> results) {
-        // TODO add certlogic validation here
+    private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
+                               List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
+        String countryOfDeparture = accessTokenConditions.getCod();
+        List<Rule> rules = provideRules(countryOfDeparture);
+        if (rules!=null && rules.size()>0) {
+            ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
+            String kidBase64 = Base64.getEncoder().encodeToString(kid);
+            Map<String, List<String>> valueSets = provideValueSets();
+            ExternalParameter externalParameter = new ExternalParameter(validationClock, valueSets, countryOfDeparture,
+                    greenCertificateData.getExpirationTime(),
+                    greenCertificateData.getIssuedAt(),
+                    greenCertificateData.getIssuingCountry(),
+                    kidBase64,
+                    ""
+                    );
+            String hcertJson = greenCertificateData.getHcertJson();
+            CertificateType certEngineType;
+            switch (greenCertificateData.getGreenCertificate().getType()) {
+                case RECOVERY:
+                    certEngineType = CertificateType.RECOVERY;
+                    break;
+                case VACCINATION:
+                    certEngineType = CertificateType.VACCINATION;
+                    break;
+                default:
+                    certEngineType = CertificateType.TEST;
+            }
+            List<ValidationResult> ruleValidationResults = certLogicEngine.validate(certEngineType, greenCertificateData.getGreenCertificate().getSchemaVersion(),
+                    rules, externalParameter, hcertJson);
+            for (ValidationResult validationResult : ruleValidationResults) {
+                ValidationStatusResponse.Result.Type type;
+                ValidationStatusResponse.Result.ResultType resultType;
+                switch (validationResult.getResult()) {
+                    case OPEN:
+                        type = ValidationStatusResponse.Result.Type.OPEN;
+                        resultType = ValidationStatusResponse.Result.ResultType.NOK;
+                        break;
+                    case PASSED:
+                        type = ValidationStatusResponse.Result.Type.PASSED;
+                        resultType = ValidationStatusResponse.Result.ResultType.OK;
+                        break;
+                    default:
+                        type = ValidationStatusResponse.Result.Type.FAILED;
+                        resultType = ValidationStatusResponse.Result.ResultType.NOK;
+                        break;
+                }
+                StringBuilder details = new StringBuilder();
+                details.append(validationResult.getRule().getIdentifier()).append(' ');
+                details.append(validationResult.getRule().getDescriptionFor("en")).append(' ');
+                if (validationResult.getCurrent()!=null && validationResult.getCurrent().length()>0) {
+                    details.append(validationResult.getCurrent()).append(' ');
+                }
+                if (validationResult.getValidationErrors()!=null && validationResult.getValidationErrors().size()>0) {
+                    details.append(" Exceptions: ");
+                    for (Exception exception : validationResult.getValidationErrors()) {
+                        details.append(exception.getMessage()).append(' ');
+                    }
+                }
+
+                addResult(results, resultType, type, "Rules", details.toString());
+            }
+        } else {
+            addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                    ValidationStatusResponse.Result.Type.PASSED, "Rules", "No rules for country of departure defined");
+        }
     }
 
-    private void validateCryptograpic(byte[] cose, byte[] kid, VerificationResult verificationResult, List<ValidationStatusResponse.Result> results) {
-        ZonedDateTime currentTime = ZonedDateTime.now().withZoneSameInstant(DateTimeKt.getUTC_ZONE_ID());
+    @NotNull
+    private List<Rule> provideRules(String countryOfDeparture) {
+        List<BusinessRuleListItemDto> rulesDto = businessRuleService.getBusinessRulesListForCountry(countryOfDeparture);
+        List<Rule> rules = new ArrayList<>();
+        for (BusinessRuleListItemDto ruleDto : rulesDto) {
+            BusinessRuleEntity ruleData = businessRuleService.getBusinessRuleByCountryAndHash(ruleDto.getCountry(), ruleDto.getHash());
+            if (ruleData!=null) {
+                try {
+                    RuleRemote ruleRemote = objectMapper.readValue(ruleData.getRawData(), RuleRemote.class);
+                    rules.add(RuleRemoteMapperKt.toRule(ruleRemote));
+                } catch (JsonProcessingException e) {
+                    throw new DccException("can not parse rule", e);
+                }
+            }
+        }
+        return rules;
+    }
+
+    @NotNull
+    private Map<String, List<String>> provideValueSets() {
+        Map<String, List<String>> valueSets = new HashMap<>();
+        for (ValueSetListItemDto valueSetListItemDto : valueSetService.getValueSetsList()) {
+            ValueSetEntity valueSetEntity = valueSetService.getValueSetByHash(valueSetListItemDto.getHash());
+            try {
+                ValueSetRemote valueSet = objectMapper.readValue(valueSetEntity.getRawData(), ValueSetRemote.class);
+                List<String> ids = new ArrayList<>();
+                for (Iterator<String> it = valueSet.getValueSetValues().fieldNames(); it.hasNext(); ) {
+                    String fieldName = it.next();
+                    ids.add(fieldName);
+                }
+                valueSets.put(valueSetEntity.getId(), ids);
+            } catch (JsonProcessingException e) {
+                throw new DccException("can not parse value list",e);
+            }
+        }
+        return valueSets;
+    }
+
+    private void validateCryptographic(byte[] cose, byte[] kid, AccessTokenConditions accessTokenConditions, VerificationResult verificationResult, List<ValidationStatusResponse.Result> results) {
+        ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
         String kidBase64 = Base64.getEncoder().encodeToString(kid);
         List<Certificate> certificates = signerInformationService.getCertificates(kidBase64);
         if (certificates!=null && certificates.size()>0) {
@@ -127,9 +258,9 @@ public class DccValidator {
                     ZonedDateTime expirationTime = (certificate instanceof X509Certificate) ?
                             ((X509Certificate) certificate).getNotAfter().toInstant().atZone(DateTimeKt.getUTC_ZONE_ID())
                             : null;
-                    if (expirationTime != null && currentTime.isAfter(expirationTime)) {
+                    if (expirationTime != null && validationClock.isAfter(expirationTime)) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                                ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "certificate expired");
+                                ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "certificate expired for validation clock");
                     }
                     signValidated = true;
                     break;

@@ -30,6 +30,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
@@ -161,6 +162,8 @@ public class ValidationServiceTest {
         accessTokenConditions.setValidationClock("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
+
+        accessTokenPayload.setConditions(accessTokenConditions);
 
         return accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
     }
