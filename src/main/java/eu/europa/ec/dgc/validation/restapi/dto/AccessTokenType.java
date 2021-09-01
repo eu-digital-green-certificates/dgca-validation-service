@@ -12,4 +12,13 @@ public enum AccessTokenType {
     public int intValue() {
         return intValue;
     }
+
+    public static AccessTokenType getTokenForInt(int intValue) {
+        for (AccessTokenType accessTokenType : AccessTokenType.values()) {
+            if (accessTokenType.intValue==intValue) {
+                return accessTokenType;
+            }
+        }
+        throw new IllegalArgumentException("unknown token type: "+intValue);
+    }
 }

@@ -6,6 +6,7 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
+import eu.europa.ec.dgc.validation.restapi.dto.ValidationDevRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.token.AccessTokenBuilder;
@@ -75,12 +76,13 @@ public class ValidationServiceTest {
     @Autowired
     DccSign dccSign;
 
+    @Autowired
+    ObjectMapper objectMapper;
+
     AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder();
 
     @Test
     void validateDcc() throws Exception {
-        ObjectMapper objectMapper =  new ObjectMapper();
-
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
         keyPairGen.initialize(256);
         KeyPair keyPair = keyPairGen.generateKeyPair();
@@ -91,27 +93,43 @@ public class ValidationServiceTest {
         validationInitRequest.setPubKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
 
         ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest);
+        assertNotNull(initResponse);
+        System.out.println("init request");
+        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(validationInitRequest));
+        System.out.println("init response");
+        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(initResponse));
+
 
         DccValidationRequest dccValidationRequest = new DccValidationRequest();
 
-        String dcc = "HC1:6BFOXN%TSMAHN-H/P8JU6+BS.5E9%UD82.7JJ59W2TT+FM*4/IQ0YVKQCPTHCV4*XUA2PWKP/HLIJL8JF8J" +
-                "F7LPMIH-O92UQ7QQ%NH0LA5O6/UIGSU7QQ7NGWWBA 7.UIAYU3X3SH90THYZQ H9+W3.G8MSGPRAAUICO1DV59UE6Q1M650 LHZA0" +
-                "D9E2LBHHGKLO-K%FGLIA5D8MJKQJK JMDJL9GG.IA.C8KRDL4O54O4IGUJKJGI.IAHLCV5GVWN.FKP123NJ%HBX/KR968X2-36/-K" +
-                "KTCY73$80PU6QW6H+932QDONAC5287T:7N95*K64POPGI*%DC*G2KV SU1Y6B.QEN7+SQ4:4P2C:8UFOFC072.T2PE0*J65UY.2ED" +
-                "TYJDK8W$WKF.VUV9L+VF3TY71NSFIM2F:47*J0JLV50M1WB*C";
+        String dcc = "HC1:NCF970%90T9WTWGVLK879%EHLE7A1KW8HX*4.AB3XK3F3D86*743F3ZU5.FK1JC X8Y50.FK6ZK7:EDOLFVC*70B$D%" +
+                " D3IA4W5646646/96OA76KCN9E%961A69L6QW6B46XJCCWENF6OF63W5NW6-96WJCT3E6N8WJC0FD4:473DSDDF+AKG7RCBA69" +
+                "C6A41AZM8JNA5N8LN9VY91OASTA.H9MB8I6A946.JCP9EJY8L/5M/5546.96D46%JCKQE:+9 8D3KC.SC4KCD3DX47B46IL6646" +
+                "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
+                "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
+                "I*GS8%LXKBJW8:G6O5";
         encodeDcc(dcc, dccValidationRequest);
         String dccSign = signDcc(dcc,keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
         dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
+        dccValidationRequest.setKid(keyProvider.getKid(KeyType.ValidationServiceEncKey));
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
-        String accessToken = createAccessTocken();
+        AccessTokenPayload accessTokenPayload = createAccessTocken();
+        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
+
+        System.out.println("access Token: "+accessToken);
 
         String resultToken = validationService.validate(dccValidationRequest, accessToken);
 
         Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(KeyType.ValidationServiceSignKey).getPublicKey()).parse(resultToken);
         System.out.println(token);
+
+        ValidationDevRequest validationDevRequest = new ValidationDevRequest();
+        validationDevRequest.setDcc(dcc);
+        validationDevRequest.setAccessTokenPayload(accessTokenPayload);
+        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(validationDevRequest));
 
     }
 
@@ -138,7 +156,7 @@ public class ValidationServiceTest {
         dccValidationRequest.setEncScheme(dccCrypt.getEncSchema());
     }
 
-    private String createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    private AccessTokenPayload createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {
         AccessTokenPayload accessTokenPayload = new AccessTokenPayload();
         accessTokenPayload.setSub(subject);
         accessTokenPayload.setIss("iss");
@@ -146,14 +164,14 @@ public class ValidationServiceTest {
         accessTokenPayload.setVersion("1.0");
         accessTokenPayload.setJti("jti");
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
-        accessTokenPayload.setExp(Instant.now().getEpochSecond()+60*60);
+        accessTokenPayload.setExp(Instant.now().getEpochSecond()+356*24*60);
 
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
         accessTokenConditions.setHash("hash");
         accessTokenConditions.setLang("en-en");
-        accessTokenConditions.setFnt("FNT");
-        accessTokenConditions.setGnt("GNT");
-        accessTokenConditions.setDob("12-12-2021");
+        accessTokenConditions.setFnt("TRZEWIK");
+        accessTokenConditions.setGnt("ARTUR");
+        accessTokenConditions.setDob("1990-01-01");
         accessTokenConditions.setCoa("NL");
         accessTokenConditions.setCod("DE");
         accessTokenConditions.setRoa("AW");
@@ -165,7 +183,7 @@ public class ValidationServiceTest {
 
         accessTokenPayload.setConditions(accessTokenConditions);
 
-        return accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
+        return accessTokenPayload;
     }
 
     private String signDcc(String dcc, PrivateKey privateKey)  {

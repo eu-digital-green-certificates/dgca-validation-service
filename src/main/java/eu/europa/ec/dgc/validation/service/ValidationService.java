@@ -70,7 +70,7 @@ public class ValidationService {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
             }
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
-            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.Structure);
+            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
             resultTokenBuilder.results(results);
             resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(KeyType.ValidationServiceSignKey),
                     keyProvider.getKid(KeyType.ValidationServiceSignKey));

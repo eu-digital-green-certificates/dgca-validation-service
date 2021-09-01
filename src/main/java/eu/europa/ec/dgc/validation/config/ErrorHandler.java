@@ -22,6 +22,7 @@ package eu.europa.ec.dgc.validation.config;
 
 import eu.europa.ec.dgc.gateway.connector.dto.ProblemReportDto;
 import eu.europa.ec.dgc.validation.exception.DccException;
+import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
@@ -52,6 +53,15 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             .status(e.getStatus())
             .contentType(MediaType.APPLICATION_JSON)
             .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ProblemReportDto> handleException(JwtException e) {
+        log.error(e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
     }
 
 
