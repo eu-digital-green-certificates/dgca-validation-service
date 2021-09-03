@@ -119,7 +119,7 @@ public class ValidationServiceTest {
         AccessTokenPayload accessTokenPayload = createAccessTocken();
         String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
 
-        System.out.println("access Token: "+accessToken);
+        System.out.println("jwt: "+accessToken);
 
         String resultToken = validationService.validate(dccValidationRequest, accessToken);
 

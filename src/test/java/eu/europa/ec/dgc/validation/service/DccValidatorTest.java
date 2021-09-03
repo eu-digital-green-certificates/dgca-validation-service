@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
@@ -32,6 +33,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import liquibase.pro.packaged.C;
 import org.aspectj.lang.annotation.Before;
 import org.bouncycastle.jcajce.provider.digest.MD2;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +53,7 @@ class DccValidatorTest {
     private CertLogicEngine certLogicEngine;
     private ValueSetService valueSetService;
     private ObjectMapper objectMapper = new ObjectMapper();
+    private CertificateUtils certificateUtils = new CertificateUtils();
 
     @BeforeEach
     public void setup() throws Exception {
@@ -61,7 +65,7 @@ class DccValidatorTest {
         doReturn("").when(affectedFieldsDataRetriever).getAffectedFieldsData(any(), any(), any());
         JsonLogicValidator jsonLogicValidator = new DefaultJsonLogicValidator();
         certLogicEngine = new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
-        dccValidator = new DccValidator(signerInformationService, businessRuleService, certLogicEngine, valueSetService);
+        dccValidator = new DccValidator(signerInformationService, businessRuleService, certLogicEngine, valueSetService, certificateUtils);
         dccValidator.initMapper();
     }
 
@@ -130,7 +134,9 @@ class DccValidatorTest {
                 "D9E2LBHHGKLO-K%FGLIA5D8MJKQJK JMDJL9GG.IA.C8KRDL4O54O4IGUJKJGI.IAHLCV5GVWN.FKP123NJ%HBX/KR968X2-36/-K" +
                 "KTCY73$80PU6QW6H+932QDONAC5287T:7N95*K64POPGI*%DC*G2KV SU1Y6B.QEN7+SQ4:4P2C:8UFOFC072.T2PE0*J65UY.2ED" +
                 "TYJDK8W$WKF.VUV9L+VF3TY71NSFIM2F:47*J0JLV50M1WB*C";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        AccessTokenConditions accessTokenConditions = buildConditions();
+        accessTokenConditions.setHash(certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)));
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
         assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());

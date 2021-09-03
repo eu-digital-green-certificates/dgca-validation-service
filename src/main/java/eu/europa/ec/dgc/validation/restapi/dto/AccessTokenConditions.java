@@ -4,10 +4,17 @@ import lombok.Data;
 
 @Data
 public class AccessTokenConditions {
+    /**
+     * hash of the dcc.
+     * Not applicable for Type 1,2
+     */
     private String hash;
+    /**
+     * selected language.
+     */
     private String lang;
     /**
-     * ICOA 930 transliterated surname (Familienname)
+     * ICOA 930 transliterated surname (Familienname).
      */
     private String fnt;
     /**

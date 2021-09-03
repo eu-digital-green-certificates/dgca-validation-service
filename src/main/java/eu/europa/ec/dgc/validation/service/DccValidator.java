@@ -31,6 +31,7 @@ import dgca.verifier.app.engine.data.ValueSet;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
 import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
+import eu.europa.ec.dgc.utils.CertificateUtils;
 import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
 import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.exception.DccException;
@@ -39,6 +40,9 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
+
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
@@ -72,6 +76,7 @@ public class DccValidator {
     private final BusinessRuleService businessRuleService;
     private final CertLogicEngine certLogicEngine;
     private final ValueSetService valueSetService;
+    private final CertificateUtils certificateUtils;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostConstruct
@@ -126,8 +131,23 @@ public class DccValidator {
         }
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                 ValidationStatusResponse.Result.Type.PASSED, "Structure", "OK");
-        validateGreenCertificateData(greenCertificateData, accessTokenConditions, results);
+        if (accessTokenType==AccessTokenType.Structure) {
+            if (accessTokenConditions.getHash()==null || accessTokenConditions.getHash().length()==0) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                        ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash not provided for check type 0");
+            } else {
+                try {
+                    if (!certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)).equals(accessTokenConditions.getHash())) {
+                        addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                                ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash does not match");
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    throw new DccException("hash calculation",e);
+                }
+            }
+        }
         if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
+            validateGreenCertificateData(greenCertificateData, accessTokenConditions, results);
             validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
             if (accessTokenType==AccessTokenType.Full) {
                 validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
