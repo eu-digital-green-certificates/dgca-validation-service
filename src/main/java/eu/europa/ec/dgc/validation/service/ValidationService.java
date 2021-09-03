@@ -39,6 +39,7 @@ public class ValidationService {
     private final DccCrypt dccCrypt;
     private final DccSign dccSign;
     private final AccessTokenKeyProvider accessTokenKeyProvider;
+    private final TokenBlackListService tokenBlackListService;
 
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
@@ -65,6 +66,9 @@ public class ValidationService {
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;
         if (validationInquiry!=null) {
+            if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti())) {
+                throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
+            }
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);
             if (!checkSignature(dcc,dccValidationRequest,validationInquiry.getPublicKey())) {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());

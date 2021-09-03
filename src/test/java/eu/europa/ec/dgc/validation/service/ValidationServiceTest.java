@@ -30,11 +30,7 @@ import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -162,7 +158,7 @@ public class ValidationServiceTest {
         accessTokenPayload.setIss("iss");
         accessTokenPayload.setType(AccessTokenType.Cryptographic.intValue());
         accessTokenPayload.setVersion("1.0");
-        accessTokenPayload.setJti("jti");
+        accessTokenPayload.setJti(UUID.randomUUID().toString());
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
         accessTokenPayload.setExp(Instant.now().getEpochSecond()+356*24*60);
 
