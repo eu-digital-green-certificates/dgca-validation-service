@@ -28,6 +28,7 @@ import dgca.verifier.app.engine.ValidationResult;
 import dgca.verifier.app.engine.data.CertificateType;
 import dgca.verifier.app.engine.data.ExternalParameter;
 import dgca.verifier.app.engine.data.Rule;
+import dgca.verifier.app.engine.data.Type;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
 import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
@@ -85,55 +86,55 @@ public class DccValidator {
         String dccPlain = prefixValidationService.decode(dcc,verificationResult);
         if (verificationResult.getContextPrefix()==null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Prefix Validation","No HC1: prefix");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"No HC1: prefix");
             return results;
         }
         byte[] compressedCose = base45Service.decode(dccPlain, verificationResult);
         if (!verificationResult.getBase45Decoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Base45 decode","Wrong Base45 coding");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"Wrong Base45 coding");
             return results;
         }
         byte[] cose = compressorService.decode(compressedCose, verificationResult);
         if (cose==null || !verificationResult.getZlibDecoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Data Decompress","Can not decompress data");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"Can not decompress data");
             return results;
         }
         CoseData coseData = coseService.decode(cose, verificationResult);
         if (coseData==null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Cose decoding","Can not decode cose");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"Can not decode cose");
             return results;
         }
         if (coseData.getKid()==null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Cose decoding","Can not extract kid");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"Can not extract kid");
             return results;
         }
         schemaValidator.validate(coseData.getCbor(),verificationResult);
         if (!verificationResult.isSchemaValid()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Schema Validation","schema invalid");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"schema invalid");
             return results;
         }
         GreenCertificateData greenCertificateData = cborService.decodeData(coseData.getCbor(), verificationResult);
         if (!verificationResult.getCborDecoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"CBOR Decoding","can not decode cbor");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"can not decode cbor");
             return results;
         }
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                ValidationStatusResponse.Result.Type.PASSED, "Structure", "OK");
+                ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
         if (accessTokenType==AccessTokenType.Structure) {
             if (accessTokenConditions.getHash()==null || accessTokenConditions.getHash().length()==0) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                        ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash not provided for check type 0");
+                        ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "dcc hash not provided for check type 0");
             } else {
                 try {
                     if (!certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)).equals(accessTokenConditions.getHash())) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                                    ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash does not match");
+                                    ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "dcc hash does not match");
                     }
                 } catch (NoSuchAlgorithmException e) {
                     throw new DccException("hash calculation",e);
@@ -150,7 +151,7 @@ public class DccValidator {
         }
         if (results.isEmpty()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                    ValidationStatusResponse.Result.Type.PASSED, "OK", "OK");
+                    ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
         }
 
         return results;
@@ -214,12 +215,25 @@ public class DccValidator {
                         details.append(exception.getMessage()).append(' ');
                     }
                 }
-
-                addResult(results, resultType, type, "Rules", details.toString());
+                ResultTypeIdentifier resultTypeIdentifier;
+                if (validationResult.getRule()!=null)  {
+                    if (validationResult.getRule().getType()== Type.INVALIDATION) {
+                        resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
+                    } else if (validationResult.getRule().getType() == Type.ACCEPTANCE) {
+                        resultTypeIdentifier = ResultTypeIdentifier.DestinationAcceptance;
+                        // TODO sub type General TravellerAcceptance
+                        // resultTypeIdentifier = ResultTypeIdentifier.TravellerAcceptance
+                    } else {
+                        resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
+                    }
+                } else {
+                    resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
+                }
+                addResult(results, resultType, type, resultTypeIdentifier, details.toString());
             }
         } else {
             addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                    ValidationStatusResponse.Result.Type.PASSED, "Rules", "No rules for country of departure defined");
+                    ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.IssuerInvalidation, "No rules for country of departure defined");
         }
     }
 
@@ -275,7 +289,8 @@ public class DccValidator {
                             : null;
                     if (expirationTime != null && validationClock.isAfter(expirationTime)) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                                ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "certificate expired for validation clock");
+                                ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification,
+                                "certificate expired for validation clock");
                     }
                     signValidated = true;
                     break;
@@ -283,14 +298,14 @@ public class DccValidator {
             }
             if (!signValidated) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                        ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "signature invalid");
+                        ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "signature invalid");
             } else {
                 addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                        ValidationStatusResponse.Result.Type.PASSED, "cryptographic", "signature valid");
+                        ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "signature valid");
             }
         } else {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED, "cryptographic", "unknown dcc signing kid");
+                    ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "unknown dcc signing kid");
         }
     }
 
@@ -298,17 +313,17 @@ public class DccValidator {
         if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName()==null ||
         !greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName().equals(accessTokenConditions.getFnt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Data check","family name does not match");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"family name does not match");
         }
         if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedGivenName()==null ||
                 !greenCertificateData.getGreenCertificate().getPerson().getStandardisedGivenName().equals(accessTokenConditions.getGnt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Data check","given name does not match");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"given name does not match");
         }
         if (greenCertificateData.getGreenCertificate().getDateOfBirth()==null ||
                 !greenCertificateData.getGreenCertificate().getDateOfBirth().equals(accessTokenConditions.getDob())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ValidationStatusResponse.Result.Type.FAILED,"Data check","data of birth does not match");
+                    ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"data of birth does not match");
         }
     }
 
@@ -340,7 +355,7 @@ public class DccValidator {
             }
             if (!accepted) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                        ValidationStatusResponse.Result.Type.FAILED,"cert type","required acceptable cert type not provided");
+                        ValidationStatusResponse.Result.Type.FAILED,ResultTypeIdentifier.TechnicalVerification,"required acceptable cert type not provided");
             }
         }
     }
@@ -369,11 +384,11 @@ public class DccValidator {
     }
 
     private void addResult(List<ValidationStatusResponse.Result> results, ValidationStatusResponse.Result.ResultType resultType,
-                      ValidationStatusResponse.Result.Type type, String identifier, String details) {
+                      ValidationStatusResponse.Result.Type type, ResultTypeIdentifier identifier, String details) {
         ValidationStatusResponse.Result result = new ValidationStatusResponse.Result();
         result.setResult(resultType);
         result.setType(type);
-        result.setIdentifier(identifier);
+        result.setIdentifier(identifier.getIdentifier());
         result.setDetails(details);
         results.add(result);
     }
