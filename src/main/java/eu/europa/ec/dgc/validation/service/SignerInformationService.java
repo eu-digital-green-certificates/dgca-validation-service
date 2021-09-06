@@ -21,11 +21,13 @@
 package eu.europa.ec.dgc.validation.service;
 
 
+import com.nimbusds.jose.util.X509CertUtils;
 import eu.europa.ec.dgc.gateway.connector.model.TrustListItem;
 import eu.europa.ec.dgc.validation.entity.SignerInformationEntity;
 import eu.europa.ec.dgc.validation.repository.SignerInformationRepository;
 import eu.europa.ec.dgc.validation.restapi.dto.KidDto;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +36,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,8 +63,14 @@ public class SignerInformationService {
     }
 
     public List<Certificate> getCertificates(String kid) {
-        // TODO return list of matching certificates
-        return Collections.emptyList();
+        List<Certificate> certificates = new ArrayList<>();
+        for (SignerInformationEntity signerInformationEntity : signerInformationRepository.findAllByKid(kid)) {
+            Certificate certificate = X509CertUtils.parse(signerInformationEntity.getRawData());
+            if (certificate!=null) {
+                certificates.add(certificate);
+            }
+        }
+        return certificates;
     }
 
 

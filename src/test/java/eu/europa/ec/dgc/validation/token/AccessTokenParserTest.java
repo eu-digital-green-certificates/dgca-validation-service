@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccessTokenParserTest {
+    public static final String KID_JUNIT = "kid-junit";
     AccessTokenParser accessTokenParser = new AccessTokenParser();
     AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder();
 
@@ -47,11 +48,12 @@ class AccessTokenParserTest {
         accessTokenPayload.setConditions(accessTokenConditions);
 
         PrivateKey privateKey = ValidationServiceTest.parsePrivateKey(ValidationServiceTest.EC_PRIVATE_KEY);
-        String accessTokenCompact = accessTokenBuilder.payload(accessTokenPayload).build(privateKey, "kid");
+        String accessTokenCompact = accessTokenBuilder.payload(accessTokenPayload).build(privateKey, KID_JUNIT);
 
         System.out.println(accessTokenCompact);
 
         PublicKey publicKey = ValidationServiceTest.parsePublicKey(ValidationServiceTest.EC_PUBLIC_KEY);
+        assertEquals(KID_JUNIT,accessTokenParser.extractKid(accessTokenCompact));
         AccessTokenPayload accessTokenParsed = accessTokenParser.parseToken(accessTokenCompact, publicKey);
         assertNotNull(accessTokenParsed);
         assertNotNull(accessTokenParsed.getConditions());

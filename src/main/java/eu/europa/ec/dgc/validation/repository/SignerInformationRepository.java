@@ -35,6 +35,8 @@ public interface SignerInformationRepository extends JpaRepository<SignerInforma
 
     Optional<SignerInformationEntity> findFirstByIdGreaterThanOrderByIdAsc(Long id);
 
+    List<SignerInformationEntity> findAllByKid(String kid);
+
     List<KidDto> findAllByOrderByIdAsc();
 
     void deleteByKidNotIn(List<String> kids);

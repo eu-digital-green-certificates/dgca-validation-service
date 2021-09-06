@@ -26,7 +26,7 @@ public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
     }
 
     @Override
-    public PublicKey getPublicKey(String kid, String id) {
+    public PublicKey getPublicKey(String kid) {
         return publicKey;
     }
 }

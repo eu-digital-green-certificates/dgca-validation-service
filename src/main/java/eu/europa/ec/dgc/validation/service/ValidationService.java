@@ -66,7 +66,8 @@ public class ValidationService {
     }
 
     public String validate(DccValidationRequest dccValidationRequest, String accessTokenCompact) {
-        AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey("TODO","TODO"));
+        String kid = accessTokenParser.extractKid(accessTokenCompact);
+        AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey(kid));
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;

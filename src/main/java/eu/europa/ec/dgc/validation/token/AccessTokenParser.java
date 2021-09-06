@@ -22,4 +22,11 @@ public class AccessTokenParser {
             throw new DccException("can not parse access token "+e.getMessage(),e);
         }
     }
+
+    public String extractKid(String jwtCompat) {
+        String[] splitToken = jwtCompat.split("\\.");
+        String unsignedToken = splitToken[0] + "." + splitToken[1] + ".";
+        Jwt token = Jwts.parser().parse(unsignedToken);
+        return (String) token.getHeader().get("kid");
+    }
 }
