@@ -14,9 +14,7 @@ import dgca.verifier.app.decoder.cose.CoseService;
 import dgca.verifier.app.decoder.cose.CryptoService;
 import dgca.verifier.app.decoder.cose.DefaultCoseService;
 import dgca.verifier.app.decoder.cose.VerificationCryptoService;
-import dgca.verifier.app.decoder.model.CoseData;
-import dgca.verifier.app.decoder.model.GreenCertificate;
-import dgca.verifier.app.decoder.model.VerificationResult;
+import dgca.verifier.app.decoder.model.*;
 import dgca.verifier.app.decoder.prefixvalidation.DefaultPrefixValidationService;
 import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
 import dgca.verifier.app.decoder.schema.DefaultSchemaValidator;
@@ -42,7 +40,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.time.ZonedDateTime;
+import java.time.*;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -73,6 +72,8 @@ public class DccValidator {
     private final ValueSetService valueSetService;
     private final CertificateUtils certificateUtils;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private final ZoneId UTC_ZONE_ID = ZoneId.ofOffset("", ZoneOffset.UTC).normalized();
 
     @PostConstruct
     public void initMapper() {
@@ -141,6 +142,7 @@ public class DccValidator {
                 }
             }
         }
+        checkExpirationDates(greenCertificateData, accessTokenConditions, results);
         checkAcceptableCertType(greenCertificateData, accessTokenConditions, results);
         if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
             validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
@@ -155,6 +157,54 @@ public class DccValidator {
         }
 
         return results;
+    }
+
+    private void checkExpirationDates(GreenCertificateData greenCertificateData, AccessTokenConditions accessTokenConditions,
+                                      List<ValidationStatusResponse.Result> results) {
+        ZonedDateTime validFrom = ZonedDateTime.parse(accessTokenConditions.getValidFrom());
+        ZonedDateTime validTo = ZonedDateTime.parse(accessTokenConditions.getValidTo());
+        if (!greenCertificateData.getExpirationTime().isAfter(validTo)) {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "Dcc exp date before validTo");
+        }
+        if (greenCertificateData.getGreenCertificate().getType() == dgca.verifier.app.decoder.model.CertificateType.RECOVERY) {
+            Test testStatement = greenCertificateData.getGreenCertificate().getTests().get(0);
+            ZonedDateTime dateOfCollection = toZonedDateTimeOrUtcLocal(testStatement.getDateTimeOfCollection());
+            if (dateOfCollection!=null && !dateOfCollection.isBefore(dateOfCollection)) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                        ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "Test collection date after condition validFrom");
+            }
+        } else if (greenCertificateData.getGreenCertificate().getType() == dgca.verifier.app.decoder.model.CertificateType.RECOVERY) {
+            RecoveryStatement recoveryStatement = greenCertificateData.getGreenCertificate().getRecoveryStatements().get(0);
+            ZonedDateTime certValidFrom = toZonedDateTimeOrUtcLocal(recoveryStatement.getCertificateValidFrom());
+            ZonedDateTime certValidTo = toZonedDateTimeOrUtcLocal(recoveryStatement.getCertificateValidUntil());
+            if (certValidFrom!=null && !certValidFrom.isBefore(validFrom)) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                        ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "Recovery validFrom after condition validFrom");
+            }
+            if (certValidTo!=null && !certValidFrom.isAfter(validTo)) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                        ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "Recovery validTo before condition validTo");
+            }
+        }
+    }
+
+    ZonedDateTime toZonedDateTimeOrUtcLocal(String dateTime) {
+        ZonedDateTime zonedDateTime;
+        try {
+            zonedDateTime = ZonedDateTime.parse(dateTime).withZoneSameInstant(UTC_ZONE_ID);
+        } catch (DateTimeParseException dateTimeParseException) {
+            try {
+                zonedDateTime = LocalDateTime.parse(dateTime).atZone(UTC_ZONE_ID);
+            } catch (DateTimeParseException dateTimeParseException1) {
+                try {
+                    zonedDateTime = LocalDate.parse(dateTime).atStartOfDay(UTC_ZONE_ID);
+                } catch (DateTimeParseException dateTimeParseException2) {
+                    zonedDateTime = null;
+                }
+            }
+        }
+        return zonedDateTime;
     }
 
     private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
