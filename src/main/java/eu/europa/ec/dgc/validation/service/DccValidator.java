@@ -15,6 +15,7 @@ import dgca.verifier.app.decoder.cose.CryptoService;
 import dgca.verifier.app.decoder.cose.DefaultCoseService;
 import dgca.verifier.app.decoder.cose.VerificationCryptoService;
 import dgca.verifier.app.decoder.model.CoseData;
+import dgca.verifier.app.decoder.model.GreenCertificate;
 import dgca.verifier.app.decoder.model.VerificationResult;
 import dgca.verifier.app.decoder.prefixvalidation.DefaultPrefixValidationService;
 import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
@@ -27,7 +28,6 @@ import dgca.verifier.app.engine.ValidationResult;
 import dgca.verifier.app.engine.data.CertificateType;
 import dgca.verifier.app.engine.data.ExternalParameter;
 import dgca.verifier.app.engine.data.Rule;
-import dgca.verifier.app.engine.data.ValueSet;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
 import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
@@ -35,11 +35,7 @@ import eu.europa.ec.dgc.utils.CertificateUtils;
 import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
 import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.exception.DccException;
-import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
-import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
-import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
-import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
-import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
+import eu.europa.ec.dgc.validation.restapi.dto.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -47,7 +43,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,7 +51,6 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
@@ -139,15 +133,16 @@ public class DccValidator {
                 try {
                     if (!certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)).equals(accessTokenConditions.getHash())) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                                ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash does not match");
+                                    ValidationStatusResponse.Result.Type.FAILED, "Structure", "dcc hash does not match");
                     }
                 } catch (NoSuchAlgorithmException e) {
                     throw new DccException("hash calculation",e);
                 }
             }
         }
+        checkAcceptableCertType(greenCertificateData, accessTokenConditions, results);
         if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
-            validateGreenCertificateData(greenCertificateData, accessTokenConditions, results);
+            validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
             validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
             if (accessTokenType==AccessTokenType.Full) {
                 validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
@@ -299,7 +294,7 @@ public class DccValidator {
         }
     }
 
-    private void validateGreenCertificateData(GreenCertificateData greenCertificateData, AccessTokenConditions accessTokenConditions, List<ValidationStatusResponse.Result> results) {
+    private void validateGreenCertificateNameDob(GreenCertificateData greenCertificateData, AccessTokenConditions accessTokenConditions, List<ValidationStatusResponse.Result> results) {
         if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName()==null ||
         !greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName().equals(accessTokenConditions.getFnt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
@@ -315,26 +310,62 @@ public class DccValidator {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ValidationStatusResponse.Result.Type.FAILED,"Data check","data of birth does not match");
         }
-        String certTypeSymbol;
-        switch (greenCertificateData.getGreenCertificate().getType()) {
-            case RECOVERY:
-                certTypeSymbol = "r";
-                break;
-            case TEST:
-                certTypeSymbol = "t";
-                break;
-            case VACCINATION:
-                certTypeSymbol = "v";
-                break;
-            default:
-                throw new DccException("unsupported cert type");
-        }
+    }
+
+    private void checkAcceptableCertType(GreenCertificateData greenCertificateData, AccessTokenConditions accessTokenConditions, List<ValidationStatusResponse.Result> results) {
         if (accessTokenConditions.getType()!=null) {
-            if (!Arrays.asList(accessTokenConditions.getType()).contains(certTypeSymbol)) {
+            boolean accepted = false;
+            for (String acceptableTypeSymbol : accessTokenConditions.getType()) {
+                AcceptableType acceptableType = AcceptableType.getTokenForInt(acceptableTypeSymbol);
+                switch (acceptableType) {
+                    case Vaccination:
+                        accepted = greenCertificateData.getGreenCertificate().getType() == dgca.verifier.app.decoder.model.CertificateType.VACCINATION;
+                        break;
+                    case Recovery:
+                        accepted = greenCertificateData.getGreenCertificate().getType() == dgca.verifier.app.decoder.model.CertificateType.RECOVERY;
+                        break;
+                    case Test:
+                        accepted = greenCertificateData.getGreenCertificate().getType() == dgca.verifier.app.decoder.model.CertificateType.TEST;
+                        break;
+                    case PCRTest:
+                        accepted = isPcrTest(greenCertificateData.getGreenCertificate());
+                        break;
+                    case RATTest:
+                        accepted = isRatTest(greenCertificateData.getGreenCertificate());
+                        break;
+                }
+                if (accepted) {
+                    break;
+                }
+            }
+            if (!accepted) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                      ValidationStatusResponse.Result.Type.FAILED,"cert type","required cert type not provided");
+                        ValidationStatusResponse.Result.Type.FAILED,"cert type","required acceptable cert type not provided");
             }
         }
+    }
+
+    private boolean isRatTest(GreenCertificate greenCertificate) {
+        boolean ratTest;
+        if (greenCertificate.getType()== dgca.verifier.app.decoder.model.CertificateType.TEST
+          && greenCertificate.getTests()!=null && greenCertificate.getTests().size()>0
+        ) {
+            ratTest = AcceptableType.RAPID_TEST_TYPE.equals(greenCertificate.getTests().get(0).getTypeOfTest());
+        } else {
+            ratTest = false;
+        }
+        return ratTest;
+    }
+
+    private boolean isPcrTest(GreenCertificate greenCertificate) {
+        boolean pcrTest;
+        if (greenCertificate.getType()== dgca.verifier.app.decoder.model.CertificateType.TEST
+                && greenCertificate.getTests()!=null && greenCertificate.getTests().size()>0) {
+            pcrTest = AcceptableType.PCR_TEST_TYPE.equals(greenCertificate.getTests().get(0).getTypeOfTest());
+        } else {
+            pcrTest = false;
+        }
+        return pcrTest;
     }
 
     private void addResult(List<ValidationStatusResponse.Result> results, ValidationStatusResponse.Result.ResultType resultType,
