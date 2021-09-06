@@ -1,6 +1,5 @@
 package eu.europa.ec.dgc.validation.service;
 
-import eu.europa.ec.dgc.utils.CertificateUtils;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.exception.DccException;
@@ -9,7 +8,6 @@ import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJWK;
 import eu.europa.ec.dgc.validation.restapi.dto.VerificationMethod;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;

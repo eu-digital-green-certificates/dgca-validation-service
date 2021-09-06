@@ -10,6 +10,9 @@ import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.service.impl.FixAccessTokenKeyProvider;
+import eu.europa.ec.dgc.validation.service.impl.MemoryTokenBlackListService;
+import eu.europa.ec.dgc.validation.service.impl.MemoryValidationStoreService;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import java.nio.charset.StandardCharsets;
@@ -31,15 +34,15 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 public class ValidationService {
-    private final ValidationStoreService validationStoreService;
+    private final MemoryValidationStoreService validationStoreService;
     private final DgcConfigProperties dgcConfigProperties;
     private final KeyProvider keyProvider;
     private final DccValidator dccValidator;
     private final AccessTokenParser accessTokenParser;
     private final DccCrypt dccCrypt;
     private final DccSign dccSign;
-    private final AccessTokenKeyProvider accessTokenKeyProvider;
-    private final TokenBlackListService tokenBlackListService;
+    private final FixAccessTokenKeyProvider accessTokenKeyProvider;
+    private final MemoryTokenBlackListService tokenBlackListService;
 
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
