@@ -1,6 +1,8 @@
 package eu.europa.ec.dgc.validation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
+import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256Aes;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
@@ -50,7 +52,7 @@ public class ValidationServiceTest {
     KeyProvider keyProvider;
 
     @Autowired
-    DccCrypt dccCrypt;
+    DccCryptService dccCryptService;
 
     @Autowired
     DccSign dccSign;
@@ -128,11 +130,11 @@ public class ValidationServiceTest {
 
 
     private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest) {
-        DccCrypt.EncryptedData enryptedData = dccCrypt.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey());
-        dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(enryptedData.getDataEncrypted()));
-        dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(enryptedData.getEncKey()));
-        dccValidationRequest.setEncScheme(dccCrypt.getEncSchema());
+        EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
+                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(), RsaOaepWithSha256Aes.ENC_SCHEMA);
+        dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
+        dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));
+        dccValidationRequest.setEncScheme(RsaOaepWithSha256Aes.ENC_SCHEMA);
     }
 
     private AccessTokenPayload createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {

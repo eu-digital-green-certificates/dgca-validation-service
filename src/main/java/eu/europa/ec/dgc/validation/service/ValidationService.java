@@ -1,6 +1,7 @@
 package eu.europa.ec.dgc.validation.service;
 
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
+import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.exception.DccException;
@@ -39,7 +40,7 @@ public class ValidationService {
     private final KeyProvider keyProvider;
     private final DccValidator dccValidator;
     private final AccessTokenParser accessTokenParser;
-    private final DccCrypt dccCrypt;
+    private final DccCryptService dccCryptService;
     private final DccSign dccSign;
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final MemoryTokenBlackListService tokenBlackListService;
@@ -104,17 +105,12 @@ public class ValidationService {
     }
 
     private String decodeDcc(DccValidationRequest dccValidationRequest, ValidationInquiry validationInquiry) {
-        String dcc;
-        switch (dccValidationRequest.getEncScheme()) {
-            case DccCrypt.ENC_SCHEMA:
-                DccCrypt.EncryptedData encryptedData = new DccCrypt.EncryptedData();
-                encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
-                encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
-                dcc = new String(dccCrypt.decryptData(encryptedData,keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey)), StandardCharsets.UTF_8);
-                break;
-            default:
-                throw new DccException("unsupported dcc encryption schema "+dccValidationRequest.getEncScheme());
-        }
+        EncryptedData encryptedData = new EncryptedData();
+        encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
+        encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
+        String dcc = new String(dccCryptService.decryptData(encryptedData,
+                keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),
+                dccValidationRequest.getEncScheme()),StandardCharsets.UTF_8);
         return dcc;
     }
 }

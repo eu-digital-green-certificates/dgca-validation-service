@@ -1,29 +1,17 @@
-package eu.europa.ec.dgc.validation.service;
+package eu.europa.ec.dgc.validation.cryptschemas;
 
 import eu.europa.ec.dgc.validation.exception.DccException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.MGF1ParameterSpec;
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
+
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
-import lombok.Data;
-import org.springframework.stereotype.Service;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.MGF1ParameterSpec;
 
-@Service
-public class DccCrypt {
+public class RsaOaepWithSha256Aes implements CryptSchema {
     public static final String KEY_CIPHER = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
     public static final String DATA_CIPHER = "AES/CBC/PKCS5Padding";
     public static final String ENC_SCHEMA = "RSAOAEPWithSHA256AES";
@@ -40,7 +28,7 @@ public class DccCrypt {
             IvParameterSpec ivspec = new IvParameterSpec(iv);
             Cipher cipher = Cipher.getInstance(DATA_CIPHER);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivspec);
-            encryptedData.dataEncrypted = cipher.doFinal(data);
+            encryptedData.setDataEncrypted(cipher.doFinal(data));
 
             // encrypt RSA key
             Cipher keyCipher = Cipher.getInstance(KEY_CIPHER);
@@ -49,7 +37,7 @@ public class DccCrypt {
             );
             keyCipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepParameterSpec);
             byte[] secretKeyBytes = secretKey.getEncoded();
-            encryptedData.encKey = keyCipher.doFinal(secretKeyBytes);
+            encryptedData.setEncKey(keyCipher.doFinal(secretKeyBytes));
 
             return encryptedData;
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | BadPaddingException |
@@ -66,7 +54,7 @@ public class DccCrypt {
                     "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT
             );
             keyCipher.init(Cipher.DECRYPT_MODE, privateKey, oaepParameterSpec);
-            byte[] rsaKey = keyCipher.doFinal(encryptedData.encKey);
+            byte[] rsaKey = keyCipher.doFinal(encryptedData.getEncKey());
 
             byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             IvParameterSpec ivspec = new IvParameterSpec(iv);
@@ -76,7 +64,7 @@ public class DccCrypt {
             SecretKey secretKey = secretKeyFactory.generateSecret(secretKeySpec);
 
             cipher.init(Cipher.DECRYPT_MODE, secretKey, ivspec);
-            return cipher.doFinal(encryptedData.dataEncrypted);
+            return cipher.doFinal(encryptedData.getDataEncrypted());
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | IllegalBlockSizeException | BadPaddingException |
                 InvalidKeyException | InvalidAlgorithmParameterException | InvalidKeySpecException e) {
             throw new DccException("decryption error",e);
@@ -87,9 +75,4 @@ public class DccCrypt {
         return ENC_SCHEMA;
     }
 
-    @Data
-    public static class EncryptedData {
-        private byte[] dataEncrypted;
-        private byte[] encKey;
-    }
 }
