@@ -67,10 +67,10 @@ public class DccValidator {
     private X509 x509 = new X509();
     private CryptoService cryptoService = new VerificationCryptoService(x509);
     private final SignerInformationService signerInformationService;
-    private final BusinessRuleService businessRuleService;
     private final CertLogicEngine certLogicEngine;
-    private final ValueSetService valueSetService;
     private final CertificateUtils certificateUtils;
+    private final ValueSetCache valueSetCache;
+    private final RulesCache rulesCache;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final ZoneId UTC_ZONE_ID = ZoneId.ofOffset("", ZoneOffset.UTC).normalized();
@@ -210,11 +210,11 @@ public class DccValidator {
     private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
                                List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
         String countryOfArrival = accessTokenConditions.getCoa();
-        List<Rule> rules = provideRules(countryOfArrival);
+        List<Rule> rules = rulesCache.provideRules(countryOfArrival);
         if (rules!=null && rules.size()>0) {
             ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
             String kidBase64 = Base64.getEncoder().encodeToString(kid);
-            Map<String, List<String>> valueSets = provideValueSets();
+            Map<String, List<String>> valueSets = valueSetCache.provideValueSets();
             ExternalParameter externalParameter = new ExternalParameter(validationClock, valueSets, countryOfArrival,
                     greenCertificateData.getExpirationTime(),
                     greenCertificateData.getIssuedAt(),
@@ -285,44 +285,6 @@ public class DccValidator {
             addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                     ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.IssuerInvalidation, "No rules for country of departure defined");
         }
-    }
-
-    @NotNull
-    private List<Rule> provideRules(String countryOfDeparture) {
-        List<BusinessRuleListItemDto> rulesDto = businessRuleService.getBusinessRulesListForCountry(countryOfDeparture);
-        List<Rule> rules = new ArrayList<>();
-        for (BusinessRuleListItemDto ruleDto : rulesDto) {
-            BusinessRuleEntity ruleData = businessRuleService.getBusinessRuleByCountryAndHash(ruleDto.getCountry(), ruleDto.getHash());
-            if (ruleData!=null) {
-                try {
-                    RuleRemote ruleRemote = objectMapper.readValue(ruleData.getRawData(), RuleRemote.class);
-                    rules.add(RuleRemoteMapperKt.toRule(ruleRemote));
-                } catch (JsonProcessingException e) {
-                    throw new DccException("can not parse rule", e);
-                }
-            }
-        }
-        return rules;
-    }
-
-    @NotNull
-    private Map<String, List<String>> provideValueSets() {
-        Map<String, List<String>> valueSets = new HashMap<>();
-        for (ValueSetListItemDto valueSetListItemDto : valueSetService.getValueSetsList()) {
-            ValueSetEntity valueSetEntity = valueSetService.getValueSetByHash(valueSetListItemDto.getHash());
-            try {
-                ValueSetRemote valueSet = objectMapper.readValue(valueSetEntity.getRawData(), ValueSetRemote.class);
-                List<String> ids = new ArrayList<>();
-                for (Iterator<String> it = valueSet.getValueSetValues().fieldNames(); it.hasNext(); ) {
-                    String fieldName = it.next();
-                    ids.add(fieldName);
-                }
-                valueSets.put(valueSetEntity.getId(), ids);
-            } catch (JsonProcessingException e) {
-                throw new DccException("can not parse value list",e);
-            }
-        }
-        return valueSets;
     }
 
     private void validateCryptographic(byte[] cose, byte[] kid, AccessTokenConditions accessTokenConditions, VerificationResult verificationResult, List<ValidationStatusResponse.Result> results) {

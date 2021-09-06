@@ -65,7 +65,9 @@ class DccValidatorTest {
         doReturn("").when(affectedFieldsDataRetriever).getAffectedFieldsData(any(), any(), any());
         JsonLogicValidator jsonLogicValidator = new DefaultJsonLogicValidator();
         certLogicEngine = new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
-        dccValidator = new DccValidator(signerInformationService, businessRuleService, certLogicEngine, valueSetService, certificateUtils);
+        ValueSetCache valueSetCache = new ValueSetCache(objectMapper, valueSetService);
+        RulesCache rulesCache = new RulesCache(businessRuleService, objectMapper);
+        dccValidator = new DccValidator(signerInformationService, certLogicEngine, certificateUtils, valueSetCache, rulesCache);
         dccValidator.initMapper();
     }
 
