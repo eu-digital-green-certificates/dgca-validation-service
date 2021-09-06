@@ -220,7 +220,7 @@ public class DccValidator {
                     greenCertificateData.getIssuedAt(),
                     greenCertificateData.getIssuingCountry(),
                     kidBase64,
-                    ""
+                    accessTokenConditions.getRoa()
                     );
             String hcertJson = greenCertificateData.getHcertJson();
             CertificateType certEngineType;
