@@ -23,4 +23,8 @@ public class ValidationInitRequest {
      */
     @NotNull
     private String subject;
+    /**
+     * Optional callback URL.
+     */
+    private String callback;
 }

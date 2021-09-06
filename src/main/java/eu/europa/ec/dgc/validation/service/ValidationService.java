@@ -47,6 +47,7 @@ public class ValidationService {
         validationInquiry.setSubject(validationInitRequest.getSubject());
         validationInquiry.setPublicKey(validationInitRequest.getPubKey());
         validationInquiry.setKeyType(validationInitRequest.getKeyType());
+        validationInquiry.setCallbackUrl(validationInitRequest.getCallback());
         long timeNow = Instant.now().getEpochSecond();
         long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
         validationInquiry.setExp(expirationTime);

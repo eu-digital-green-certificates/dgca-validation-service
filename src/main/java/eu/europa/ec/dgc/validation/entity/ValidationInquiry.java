@@ -14,5 +14,6 @@ public class ValidationInquiry {
      */
     private String publicKey;
     private String keyType;
+    private String callbackUrl;
     private long exp;
 }
