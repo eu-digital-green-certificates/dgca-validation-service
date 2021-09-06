@@ -209,13 +209,13 @@ public class DccValidator {
 
     private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
                                List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
-        String countryOfDeparture = accessTokenConditions.getCod();
-        List<Rule> rules = provideRules(countryOfDeparture);
+        String countryOfArrival = accessTokenConditions.getCoa();
+        List<Rule> rules = provideRules(countryOfArrival);
         if (rules!=null && rules.size()>0) {
             ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
             String kidBase64 = Base64.getEncoder().encodeToString(kid);
             Map<String, List<String>> valueSets = provideValueSets();
-            ExternalParameter externalParameter = new ExternalParameter(validationClock, valueSets, countryOfDeparture,
+            ExternalParameter externalParameter = new ExternalParameter(validationClock, valueSets, countryOfArrival,
                     greenCertificateData.getExpirationTime(),
                     greenCertificateData.getIssuedAt(),
                     greenCertificateData.getIssuingCountry(),
