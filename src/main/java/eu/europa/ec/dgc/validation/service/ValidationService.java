@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 public class ValidationService {
-    private final MemoryValidationStoreService validationStoreService;
+    private final ValidationStoreService validationStoreService;
     private final DgcConfigProperties dgcConfigProperties;
     private final KeyProvider keyProvider;
     private final DccValidator dccValidator;
@@ -43,7 +43,7 @@ public class ValidationService {
     private final DccCryptService dccCryptService;
     private final DccSign dccSign;
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
-    private final MemoryTokenBlackListService tokenBlackListService;
+    private final TokenBlackListService tokenBlackListService;
 
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
@@ -55,8 +55,8 @@ public class ValidationService {
         long timeNow = Instant.now().getEpochSecond();
         long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
         validationInquiry.setExp(expirationTime);
+        validationStoreService.storeValidation(validationInquiry);
 
-        validationStoreService.storeValidation(validationInquiry, expirationTime);
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(validationInitRequest.getSubject());
@@ -72,7 +72,7 @@ public class ValidationService {
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;
         if (validationInquiry!=null) {
-            if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti())) {
+            if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
             }
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);

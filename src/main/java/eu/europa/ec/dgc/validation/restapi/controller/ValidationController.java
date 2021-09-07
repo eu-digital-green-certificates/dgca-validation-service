@@ -4,6 +4,7 @@ import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.service.ValidationService;
+import eu.europa.ec.dgc.validation.service.ValidationStoreService;
 import eu.europa.ec.dgc.validation.service.impl.MemoryValidationStoreService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class ValidationController {
     private final ValidationService validationService;
-    private final MemoryValidationStoreService validationStoreService;
+    private final ValidationStoreService validationStoreService;
 
     @Operation(
             summary = "validation initialization",

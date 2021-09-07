@@ -1,6 +1,5 @@
 package eu.europa.ec.dgc.validation.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dgca.verifier.app.decoder.base45.Base45Service;
@@ -15,6 +14,7 @@ import dgca.verifier.app.decoder.cose.CryptoService;
 import dgca.verifier.app.decoder.cose.DefaultCoseService;
 import dgca.verifier.app.decoder.cose.VerificationCryptoService;
 import dgca.verifier.app.decoder.model.*;
+import dgca.verifier.app.decoder.model.CertificateType;
 import dgca.verifier.app.decoder.prefixvalidation.DefaultPrefixValidationService;
 import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
 import dgca.verifier.app.decoder.schema.DefaultSchemaValidator;
@@ -23,16 +23,8 @@ import dgca.verifier.app.decoder.services.X509;
 import dgca.verifier.app.engine.CertLogicEngine;
 import dgca.verifier.app.engine.DateTimeKt;
 import dgca.verifier.app.engine.ValidationResult;
-import dgca.verifier.app.engine.data.CertificateType;
-import dgca.verifier.app.engine.data.ExternalParameter;
-import dgca.verifier.app.engine.data.Rule;
-import dgca.verifier.app.engine.data.Type;
-import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
-import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
-import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
+import dgca.verifier.app.engine.data.*;
 import eu.europa.ec.dgc.utils.CertificateUtils;
-import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
-import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.*;
 
@@ -44,14 +36,11 @@ import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -210,7 +199,8 @@ public class DccValidator {
     private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
                                List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
         String countryOfArrival = accessTokenConditions.getCoa();
-        List<Rule> rules = rulesCache.provideRules(countryOfArrival);
+        List<Rule> rules = rulesCache.provideRules
+                (countryOfArrival);
         if (rules!=null && rules.size()>0) {
             ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
             String kidBase64 = Base64.getEncoder().encodeToString(kid);
@@ -223,16 +213,16 @@ public class DccValidator {
                     accessTokenConditions.getRoa()
                     );
             String hcertJson = greenCertificateData.getHcertJson();
-            CertificateType certEngineType;
+            dgca.verifier.app.engine.data.CertificateType certEngineType;
             switch (greenCertificateData.getGreenCertificate().getType()) {
                 case RECOVERY:
-                    certEngineType = CertificateType.RECOVERY;
+                    certEngineType = dgca.verifier.app.engine.data.CertificateType.RECOVERY;
                     break;
                 case VACCINATION:
-                    certEngineType = CertificateType.VACCINATION;
+                    certEngineType = dgca.verifier.app.engine.data.CertificateType.VACCINATION;
                     break;
                 default:
-                    certEngineType = CertificateType.TEST;
+                    certEngineType = dgca.verifier.app.engine.data.CertificateType.TEST;
             }
             List<ValidationResult> ruleValidationResults = certLogicEngine.validate(certEngineType, greenCertificateData.getGreenCertificate().getSchemaVersion(),
                     rules, externalParameter, hcertJson);
@@ -270,9 +260,11 @@ public class DccValidator {
                     if (validationResult.getRule().getType()== Type.INVALIDATION) {
                         resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
                     } else if (validationResult.getRule().getType() == Type.ACCEPTANCE) {
-                        resultTypeIdentifier = ResultTypeIdentifier.DestinationAcceptance;
-                        // TODO sub type General TravellerAcceptance
-                        // resultTypeIdentifier = ResultTypeIdentifier.TravellerAcceptance
+                        if (validationResult.getRule().getRuleCertificateType() == RuleCertificateType.GENERAL) {
+                            resultTypeIdentifier = ResultTypeIdentifier.TravellerAcceptance;
+                        } else {
+                            resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
+                        }
                     } else {
                         resultTypeIdentifier = ResultTypeIdentifier.IssuerInvalidation;
                     }
