@@ -46,6 +46,11 @@ public class AccessTokenConditions {
      */
     private String[] type;
     /**
+     * Optional category which shall be reflected in the validation by additional rules/logic.
+     * if null, Standard Business Rule Check will apply.
+     */
+    private String[] category;
+    /**
      * Date where te DCC must be validateable.
      */
     private String validationClock;
