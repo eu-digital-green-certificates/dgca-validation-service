@@ -2,9 +2,6 @@ server {
     listen       80;
     server_name  localhost;
     location / {
-      return 200;
-    }
-    location /identity {
       proxy_pass http://localhost:8080/identity;
     }
     location /validate {
