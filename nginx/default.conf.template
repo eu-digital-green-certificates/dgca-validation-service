@@ -1,0 +1,16 @@
+server {
+    listen       80;
+    server_name  localhost;
+    location / {
+      return 200;
+    }
+    location /validate {
+      proxy_pass http://localhost:8080/validate;
+    }
+    location /status {
+      proxy_pass http://localhost:8080/status;
+    }
+    location /initialize {
+      proxy_pass http://localhost:8080/result;
+    }
+}
