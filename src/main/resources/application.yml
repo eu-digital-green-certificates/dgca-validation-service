@@ -55,7 +55,7 @@ dgc:
   valueSetsDownload:
     timeInterval: 1800000
     lockLimit: 3600000
-  serviceUrl: https://dgca-validation-service-eu-test.cfapps.eu10.hana.ondemand.com
+  serviceUrl: http://service
   keyStoreFile: certs/dev-test.jks
   keyStorePassword: dcc
   privateKeyPassword: dcc
