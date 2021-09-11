@@ -82,8 +82,7 @@ public class ValidationService {
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
             List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
             resultTokenBuilder.results(results);
-            resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(KeyType.ValidationServiceSignKey),
-                    keyProvider.getKid(KeyType.ValidationServiceSignKey));
+            resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
@@ -110,7 +109,7 @@ public class ValidationService {
         encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
         encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
         String dcc = new String(dccCryptService.decryptData(encryptedData,
-                keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),
+                keyProvider.receivePrivateKey(keyProvider.getKeyName( dccValidationRequest.getKid())),
                 dccValidationRequest.getEncScheme()),StandardCharsets.UTF_8);
         return dcc;
     }

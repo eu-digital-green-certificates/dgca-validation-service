@@ -93,7 +93,8 @@ public class ValidationServiceTest {
         String dccSign = signDcc(dcc,keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
         dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
-        dccValidationRequest.setKid(keyProvider.getKid(KeyType.ValidationServiceEncKey));
+
+        dccValidationRequest.setKid(keyProvider.getKid(keyProvider.getKeyNames(KeyType.ValidationServiceEncKey)[0]));
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
@@ -104,7 +105,7 @@ public class ValidationServiceTest {
 
         String resultToken = validationService.validate(dccValidationRequest, accessToken);
 
-        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(KeyType.ValidationServiceSignKey).getPublicKey()).parse(resultToken);
+        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.ValidationServiceSignKey)[0]).getPublicKey()).parse(resultToken);
         System.out.println(token);
 
         ValidationDevRequest validationDevRequest = new ValidationDevRequest();
@@ -131,7 +132,7 @@ public class ValidationServiceTest {
 
     private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest) {
         EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(), RsaOaepWithSha256Aes.ENC_SCHEMA);
+                keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0]).getPublicKey(), RsaOaepWithSha256Aes.ENC_SCHEMA);
         dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
         dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));
         dccValidationRequest.setEncScheme(RsaOaepWithSha256Aes.ENC_SCHEMA);

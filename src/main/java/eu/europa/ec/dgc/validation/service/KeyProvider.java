@@ -1,14 +1,26 @@
 package eu.europa.ec.dgc.validation.service;
 
-import eu.europa.ec.dgc.validation.entity.KeyType;
 
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
+import eu.europa.ec.dgc.validation.entity.KeyType;
+import eu.europa.ec.dgc.validation.entity.KeyUse;
+
 public interface KeyProvider {
-    Certificate receiveCertificate(KeyType keyType);
+    Certificate receiveCertificate(String keyName);
 
-    PrivateKey receivePrivateKey(KeyType keyType);
+    PrivateKey receivePrivateKey(String keyName);
 
-    String getKid(KeyType keyType);
+    String getKeyName(String kid);
+
+    String[] getKeyNames(KeyType type);
+
+    String getKid(String keyName);
+
+    String getAlg(String keyName);
+
+    String getActiveSignKey();
+
+    KeyUse getKeyUse(String keyName);
 }
