@@ -39,19 +39,19 @@ public class DccCryptService {
         cryptSchemaMap.put(cryptSchema.getEncSchema(), cryptSchema);
     }
 
-    public EncryptedData encryptData(byte[] data, PublicKey publicKey, String encSchema) {
+    public EncryptedData encryptData(byte[] data, PublicKey publicKey, String encSchema, byte[] iv) {
         CryptSchema cryptSchema = cryptSchemaMap.get(encSchema);
         if (cryptSchema!=null) {
-            return cryptSchema.encryptData(data, publicKey);
+            return cryptSchema.encryptData(data, publicKey,iv);
         } else {
             throw new DccException("encryption schema not supported "+encSchema);
         }
     }
 
-    public byte[] decryptData(EncryptedData encryptedData, PrivateKey privateKey, String encSchema) {
+    public byte[] decryptData(EncryptedData encryptedData, PrivateKey privateKey, String encSchema, byte[] iv) {
         CryptSchema cryptSchema = cryptSchemaMap.get(encSchema);
         if (cryptSchema!=null) {
-            return cryptSchema.decryptData(encryptedData, privateKey);
+            return cryptSchema.decryptData(encryptedData, privateKey,iv);
         } else {
             throw new DccException("encryption schema not supported "+encSchema);
         }

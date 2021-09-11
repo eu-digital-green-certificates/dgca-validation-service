@@ -52,6 +52,8 @@ public class ValidationService {
         validationInquiry.setPublicKey(validationInitRequest.getPubKey());
         validationInquiry.setKeyType(validationInitRequest.getKeyType());
         validationInquiry.setCallbackUrl(validationInitRequest.getCallback());
+        if(validationInitRequest.getNonce()!=null)
+          validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
         long timeNow = Instant.now().getEpochSecond();
         long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
         validationInquiry.setExp(expirationTime);
@@ -111,7 +113,7 @@ public class ValidationService {
         encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
         String dcc = new String(dccCryptService.decryptData(encryptedData,
                 keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),
-                dccValidationRequest.getEncScheme()),StandardCharsets.UTF_8);
+                dccValidationRequest.getEncScheme(),validationInquiry.getNonce()),StandardCharsets.UTF_8);
         return dcc;
     }
 }

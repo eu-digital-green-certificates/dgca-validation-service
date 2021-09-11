@@ -13,7 +13,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class DccEncryptionExampleTest {
     RsaOaepWithSha256Aes dccCryptService = new RsaOaepWithSha256Aes();
@@ -29,16 +28,10 @@ class DccEncryptionExampleTest {
         Random random = new Random();
         byte[] data = new byte[2000];
         random.nextBytes(data);
-
-        EncryptedData encryptedData = dccCryptService.encryptData(data, keyPair.getPublic());
-        byte[] dataDecrypted = dccCryptService.decryptData(encryptedData, keyPair.getPrivate());
+        byte[] iv = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        EncryptedData encryptedData = dccCryptService.encryptData(data, keyPair.getPublic(),iv);
+        byte[] dataDecrypted = dccCryptService.decryptData(encryptedData, keyPair.getPrivate(),iv);
 
         assertArrayEquals(data, dataDecrypted);
     }
-
-
-
-
-
-
 }

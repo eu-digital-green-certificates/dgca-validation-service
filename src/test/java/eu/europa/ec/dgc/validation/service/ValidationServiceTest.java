@@ -64,6 +64,7 @@ public class ValidationServiceTest {
 
     @Test
     void validateDcc() throws Exception {
+        byte [] iv = new byte[]{0,0,1,5,1,0,0,0,0,0,0,0,0,0,0,0};
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
         keyPairGen.initialize(256);
         KeyPair keyPair = keyPairGen.generateKeyPair();
@@ -72,7 +73,7 @@ public class ValidationServiceTest {
         validationInitRequest.setKeyType("EC");
         validationInitRequest.setSubject(subject);
         validationInitRequest.setPubKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
-
+        validationInitRequest.setNonce(Base64.getEncoder().encodeToString(iv));
         ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest);
         assertNotNull(initResponse);
         System.out.println("init request");
@@ -89,7 +90,7 @@ public class ValidationServiceTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        encodeDcc(dcc, dccValidationRequest);
+        encodeDcc(dcc, dccValidationRequest,iv);
         String dccSign = signDcc(dcc,keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
         dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
@@ -129,9 +130,9 @@ public class ValidationServiceTest {
     }
 
 
-    private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest) {
+    private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest,byte[] iv) {
         EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(), RsaOaepWithSha256Aes.ENC_SCHEMA);
+                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(), RsaOaepWithSha256Aes.ENC_SCHEMA,iv);
         dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
         dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));
         dccValidationRequest.setEncScheme(RsaOaepWithSha256Aes.ENC_SCHEMA);
