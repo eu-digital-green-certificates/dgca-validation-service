@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 public class AccessTokenPayload {
-    @JsonProperty("Jti")
     private String jti;
     private String iss;
     private long iat;
