@@ -2,7 +2,8 @@ package eu.europa.ec.dgc.validation.service;
 
 import eu.europa.ec.dgc.validation.cryptschemas.CryptSchema;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
-import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256Aes;
+import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256AesCBC;
+import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256AesGCM;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -35,8 +36,10 @@ public class DccCryptService {
     @PostConstruct
     public void initSchemas() {
         cryptSchemaMap = new HashMap<>();
-        CryptSchema cryptSchema = new RsaOaepWithSha256Aes();
+        CryptSchema cryptSchema = new RsaOaepWithSha256AesCBC();
+        CryptSchema cryptSchema2 = new RsaOaepWithSha256AesGCM();
         cryptSchemaMap.put(cryptSchema.getEncSchema(), cryptSchema);
+        cryptSchemaMap.put(cryptSchema2.getEncSchema(), cryptSchema2);
     }
 
     public EncryptedData encryptData(byte[] data, PublicKey publicKey, String encSchema, byte[] iv) {

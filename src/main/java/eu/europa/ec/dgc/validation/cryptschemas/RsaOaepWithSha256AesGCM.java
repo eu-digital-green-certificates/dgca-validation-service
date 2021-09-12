@@ -12,10 +12,10 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 
-public class RsaOaepWithSha256Aes implements CryptSchema {
+public class RsaOaepWithSha256AesGCM implements CryptSchema {
     public static final String KEY_CIPHER = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
     public static final String DATA_CIPHER = "AES/GCM/NoPadding";
-    public static final String ENC_SCHEMA = "RSAOAEPWithSHA256AES";
+    public static final String ENC_SCHEMA = "RSAOAEPWithSHA256AESGCM";
 
     public EncryptedData encryptData(byte[] data, PublicKey publicKey, byte [] iv) {
         try {
