@@ -75,10 +75,13 @@ public class ValidationService {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
             }
-            String dcc = decodeDcc(dccValidationRequest, validationInquiry);
-            if (!checkSignature(dcc,dccValidationRequest,validationInquiry.getPublicKey())) {
+            if (!checkSignature(org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
+                                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
+                                validationInquiry.getPublicKey())) {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
             }
+            String dcc = decodeDcc(dccValidationRequest, validationInquiry);
+
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
             List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
             resultTokenBuilder.results(results);
@@ -93,15 +96,15 @@ public class ValidationService {
         return resultToken;
     }
 
-    private boolean checkSignature(String dcc, DccValidationRequest dccValidationRequest, String publicKeyBase64) {
+    private boolean checkSignature(byte[] data, byte[] signature, String publicKeyBase64) {
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+            byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("EC");
             PublicKey publicKey = kf.generatePublic(spec);
-            return dccSign.verifySignature(dcc, dccValidationRequest.getSig(), publicKey);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new DccException("can not initialize signature validation",e);
+            return dccSign.verifySignature(data, signature, publicKey);
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -113,5 +116,13 @@ public class ValidationService {
                 keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),
                 dccValidationRequest.getEncScheme()),StandardCharsets.UTF_8);
         return dcc;
+    }
+
+    private String cleanKeyString(String rawKey) {
+        return rawKey.replaceAll("\\n", "")
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "");
     }
 }

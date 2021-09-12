@@ -168,7 +168,7 @@ public class ValidationServiceTest {
     }
 
     private String signDcc(String dcc, PrivateKey privateKey)  {
-        return dccSign.signDcc(dcc, privateKey);
+        return dccSign.signDcc(dcc.getBytes(), privateKey);
     }
 
 }
