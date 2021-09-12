@@ -5,6 +5,7 @@ import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.exception.DccException;
+import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
@@ -26,8 +27,13 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -65,6 +71,45 @@ public class ValidationService {
         return validationInitResponse;
     }
 
+    private boolean checkMandatoryFields(AccessTokenPayload accessToken)
+    {
+        AccessTokenType tokenType= AccessTokenType.getTokenForInt(accessToken.getType());
+
+        if(accessToken.getExp()<Instant.now().getEpochSecond())
+            return false;
+
+        if(accessToken.getIat()>Instant.now().getEpochSecond())
+            return false;
+
+        if(accessToken.getConditions()==null)
+            return false;
+
+        AccessTokenConditions conditions = accessToken.getConditions();
+
+        if(conditions.getValidFrom()==null || conditions.getDob()==null|| conditions.getValidTo()==null|| conditions.getLang()==null || conditions.getType()==null)
+            return false;
+
+        if(tokenType == AccessTokenType.Structure && conditions.getHash()==null)
+            return false;
+         
+        if(tokenType.intValue()>AccessTokenType.Structure.intValue())
+        {
+            if(conditions.getFnt()==null ||
+               conditions.getGnt()==null||
+               conditions.getValidationClock()==null)
+                return false;
+
+            if(tokenType == AccessTokenType.Full && (
+                conditions.getRoa() == null ||
+                conditions.getRod() == null ||
+                conditions.getCoa() == null ||
+                conditions.getCod() == null))
+                return false;
+        }
+
+        return true;
+    }
+
     public String validate(DccValidationRequest dccValidationRequest, String accessTokenCompact) {
         String kid = accessTokenParser.extractKid(accessTokenCompact);
         AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey(kid));
@@ -75,6 +120,10 @@ public class ValidationService {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
             }
+
+            if(!checkMandatoryFields(accessToken))
+                throw new DccException("Validation Conditions missing or not properly set",HttpStatus.BAD_REQUEST.value());
+
             if (!checkSignature(org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
                                 org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
                                 validationInquiry.getPublicKey())) {
