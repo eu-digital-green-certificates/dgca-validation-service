@@ -16,4 +16,5 @@ public class ValidationInquiry {
     private String keyType;
     private String callbackUrl;
     private long exp;
+    private byte[] nonce;
 }

@@ -150,10 +150,6 @@ public class DccValidator {
                     validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
                 }
             }
-            if (results.isEmpty()) {
-                addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                        ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
-            }
         }
         catch(NullPointerException e)
         {

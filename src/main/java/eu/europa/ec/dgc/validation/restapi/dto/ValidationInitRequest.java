@@ -13,7 +13,7 @@ public class ValidationInitRequest {
     private String pubKey;
     /**
      * Use Crypto Metod accoding to JWT definitions in RFC7518.
-     * ES256/PS256
+     * ES256/PS256/RS256
      */
     @NotNull
     private String keyType;
@@ -27,4 +27,7 @@ public class ValidationInitRequest {
      * Optional callback URL.
      */
     private String callback;
+    
+    @NotNull
+    private String nonce;
 }
