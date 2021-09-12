@@ -134,7 +134,7 @@ class DccValidatorTest {
         AccessTokenConditions accessTokenConditions = buildConditions();
         accessTokenConditions.setHash(certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)));
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure);
-        assertEquals(1,results.size());
+        assertEquals(2,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
     }
 

@@ -293,7 +293,7 @@ public class DccValidator {
                         ResultTypeIdentifier.TechnicalVerification,"SIGNATURE", "signature invalid");
             } else {
                 addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                         ResultTypeIdentifier.TechnicalVerification,"CRYPTO", "signature valid");
+                         ResultTypeIdentifier.TechnicalVerification,"SIGNATURE", "signature valid");
             }
         } else {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
