@@ -2,6 +2,9 @@ package eu.europa.ec.dgc.validation.service;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+
+import com.nimbusds.jose.util.Base64;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,7 +20,7 @@ class DccSignTest {
         KeyPair keyPair = keyPairGen.generateKeyPair();
 
         String dcc = "dccContent";
-        String dccSignature = dccSign.signDcc(dcc,keyPair.getPrivate());
-        assertTrue(dccSign.verifySignature(dcc, dccSignature, keyPair.getPublic()));
+        String dccSignature = dccSign.signDcc(dcc.getBytes(),keyPair.getPrivate());
+        assertTrue(dccSign.verifySignature(dcc.getBytes(), org.bouncycastle.util.encoders.Base64.decode(dccSignature), keyPair.getPublic()));
     }
 }
