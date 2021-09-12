@@ -2,6 +2,7 @@ package eu.europa.ec.dgc.validation.service;
 
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.entity.KeyType;
+import eu.europa.ec.dgc.validation.entity.KeyUse;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.IdentityResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJWK;
@@ -28,17 +29,18 @@ public class IdentityService {
         identityResponse.setId(identityId);
         List<VerificationMethod> verificationMethods = new ArrayList<>();
         identityResponse.setVerificationMethod(verificationMethods);
-        for (KeyType keyType : KeyType.values()) {
+        for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
             VerificationMethod verificationMethod = new VerificationMethod();
-            verificationMethod.setId(identityId+"#"+keyType.name()+"-1");
+            verificationMethod.setId(identityId+"#"+keyName);
             verificationMethod.setController(identityId);
             verificationMethod.setType("JsonWebKey2020");
-            Certificate certificate = keyProvider.receiveCertificate(keyType);
+            Certificate certificate = keyProvider.receiveCertificate(keyName);
             PublicKeyJWK publicKeyJWK = new PublicKeyJWK();
             try {
                 publicKeyJWK.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-                publicKeyJWK.setKid(keyProvider.getKid(keyType));
-                publicKeyJWK.setAlg("ES256");
+                publicKeyJWK.setKid(keyProvider.getKid(keyName));
+                publicKeyJWK.setAlg(keyProvider.getAlg(keyName));
+                publicKeyJWK.setUse(keyProvider.getKeyUse(keyName).toString());
             } catch (CertificateEncodingException e) {
                 throw new DccException("can not encode certificate",e);
             }

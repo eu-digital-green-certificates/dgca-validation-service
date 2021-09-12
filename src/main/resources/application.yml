@@ -55,10 +55,14 @@ dgc:
   valueSetsDownload:
     timeInterval: 1800000
     lockLimit: 3600000
-  serviceUrl: http://service
+  serviceUrl: http://localhost:8080
   keyStoreFile: certs/dev-test.jks
   keyStorePassword: dcc
   privateKeyPassword: dcc
+  encAliases: validationserviceenckey
+  signAliases: validationservicesignkey
+  activeSignKey: validationservicesignkey
+
 
 
 
