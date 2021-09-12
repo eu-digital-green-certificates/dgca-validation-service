@@ -163,6 +163,7 @@ public class ValidationService {
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;
+        ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
         if (validationInquiry!=null) {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
@@ -178,15 +179,17 @@ public class ValidationService {
             }
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);
 
-            ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
+          
             List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
-            resultTokenBuilder.results(results);
-            resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());
+            resultToken = resultTokenBuilder.build(results,accessToken.getSub(),
+                                                           dgcConfigProperties.getServiceUrl(), 
+                                                           keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
+                                                           dccValidationRequest.getKid());
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
         } else {
-            resultToken  = null;
+            resultToken  = resultTokenBuilder.build(null,accessToken.getSub(),dgcConfigProperties.getServiceUrl(),keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());;
         }
         return resultToken;
     }
