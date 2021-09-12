@@ -24,7 +24,7 @@ jobs:
         cf api ${CF_API}
         cf auth
         cf target -o ${CF_ORG} -s ${CF_SPACE}
-        cf push ${APP_NAME} --docker-image ${APP_IMAGE}:${APP_VERSION} --docker-username ${CF_DOCKER_USERNAME}
+        cf push ${APP_NAME} --docker-image ${APP_IMAGE}/cloudfoundry:${APP_VERSION} --docker-username ${CF_DOCKER_USERNAME}
       env:
         APP_NAME: dgca-validation-service-eu-test
         APP_IMAGE: docker.pkg.github.com/${{ github.repository }}/dgca-validation-service
