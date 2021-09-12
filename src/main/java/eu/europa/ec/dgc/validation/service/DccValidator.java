@@ -41,6 +41,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -117,6 +119,8 @@ public class DccValidator {
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                 ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
         if (accessTokenType==AccessTokenType.Structure) {
+            if(accessTokenConditions==null)
+                throw new DccException("Validation Conditions missing",HttpStatus.SC_BAD_REQUEST);
             if (accessTokenConditions.getHash()==null || accessTokenConditions.getHash().length()==0) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                         ValidationStatusResponse.Result.Type.FAILED, ResultTypeIdentifier.TechnicalVerification, "dcc hash not provided for check type 0");
@@ -131,20 +135,28 @@ public class DccValidator {
                 }
             }
         }
-        checkExpirationDates(greenCertificateData, accessTokenConditions, results);
-        checkAcceptableCertType(greenCertificateData, accessTokenConditions, results);
-        if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
-            validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
-            validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
-            if (accessTokenType==AccessTokenType.Full) {
-                validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
+    
+        try
+        {
+            checkExpirationDates(greenCertificateData, accessTokenConditions, results);
+            checkAcceptableCertType(greenCertificateData, accessTokenConditions, results);
+            if (accessTokenType.intValue()>AccessTokenType.Structure.intValue()) {
+                validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
+                validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
+                if (accessTokenType==AccessTokenType.Full) {
+                    validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
+                }
+            }
+            if (results.isEmpty()) {
+                addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                        ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
             }
         }
-        if (results.isEmpty()) {
-            addResult(results, ValidationStatusResponse.Result.ResultType.OK,
-                    ValidationStatusResponse.Result.Type.PASSED, ResultTypeIdentifier.TechnicalVerification, "OK");
+        catch(NullPointerException e)
+        {
+           throw new DccException("Validation Conditions missing",HttpStatus.SC_BAD_REQUEST);
         }
-
+        
         return results;
     }
 
