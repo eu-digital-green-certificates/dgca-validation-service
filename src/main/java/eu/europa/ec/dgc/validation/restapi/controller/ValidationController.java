@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,14 +37,15 @@ public class ValidationController {
                 + "and validate a DCC for this subject"
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "signature created"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized, if no client certificate was matched"),
-            @ApiResponse(responseCode = "400", description = "Response Body with Error Details.")})
-    @PostMapping(value = "/initialize", consumes = MediaType.APPLICATION_JSON_VALUE,
+            @ApiResponse(responseCode = "201", description = "Subject created"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized."),
+            @ApiResponse(responseCode = "400", description = "Bad Request.")})
+    @PutMapping(value = "/initialize/{subject}", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ValidationInitResponse> initValidation(
+    public ResponseEntity<ValidationInitResponse> initValidation(@PathVariable String subject,
             @Valid @RequestBody ValidationInitRequest validationInitRequest) {
-        return ResponseEntity.ok(validationService.initValidation(validationInitRequest));
+        return new ResponseEntity<ValidationInitResponse>(validationService.initValidation(validationInitRequest,subject),
+                                                         HttpStatus.CREATED);
     }
 
     @Operation(
@@ -54,7 +56,7 @@ public class ValidationController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "OK"),
             @ApiResponse(responseCode = "204", description = "No content, wait for status"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized, if no client certificate was matched"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "410", description = "Gone. Subject does not exist anymore (TTL expired).")})
     @GetMapping(value = "/status/{subject}", produces = "application/jwt")
     public ResponseEntity<String> checkValidationStatus(@PathVariable String subject) {

@@ -51,10 +51,10 @@ public class ValidationService {
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
 
-    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest) {
+    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
         validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.OPEN);
-        validationInquiry.setSubject(validationInitRequest.getSubject());
+        validationInquiry.setSubject(subject);
         validationInquiry.setPublicKey(validationInitRequest.getPubKey());
         validationInquiry.setKeyType(validationInitRequest.getKeyType());
         validationInquiry.setCallbackUrl(validationInitRequest.getCallback());
@@ -67,7 +67,7 @@ public class ValidationService {
 
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         validationInitResponse.setExp(expirationTime);
-        validationInitResponse.setSubject(validationInitRequest.getSubject());
+        validationInitResponse.setSubject(subject);
         validationInitResponse.setAud(dgcConfigProperties.getServiceUrl()+"/validate");
 
         return validationInitResponse;
