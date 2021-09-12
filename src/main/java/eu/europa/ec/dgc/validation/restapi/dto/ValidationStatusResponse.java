@@ -29,8 +29,6 @@ public class ValidationStatusResponse {
     @Data
     public static class Result {
 
-        public enum Type { OPEN, FAILED, PASSED }
-
         public enum ResultType { CHK, OK, NOK }
 
         /**
@@ -44,7 +42,7 @@ public class ValidationStatusResponse {
         /**
          * Type of the check.
          */
-        private Type type;
+        private ResultTypeIdentifier type;
         /**
          * Description of the checkup.
          */

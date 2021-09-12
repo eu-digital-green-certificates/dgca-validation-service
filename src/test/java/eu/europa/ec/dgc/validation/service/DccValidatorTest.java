@@ -77,7 +77,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
     }
 
     @Test
@@ -86,7 +85,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
     }
 
     @Test
@@ -95,7 +93,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
     }
 
     @Test
@@ -104,7 +101,7 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
+
     }
 
     @Test
@@ -113,7 +110,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
     }
 
     @Test
@@ -126,7 +122,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.FAILED,results.get(0).getType());
     }
 
     @Test
@@ -141,7 +136,6 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());
     }
 
     @Test
@@ -156,10 +150,8 @@ class DccValidatorTest {
         List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Cryptographic);
         for (ValidationStatusResponse.Result result : results) {
             assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
-            assertEquals(ValidationStatusResponse.Result.Type.PASSED,result.getType());
         }
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());
     }
 
     @Test
@@ -177,10 +169,8 @@ class DccValidatorTest {
         for (ValidationStatusResponse.Result result : results) {
             System.out.println(result);
             assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
-            assertEquals(ValidationStatusResponse.Result.Type.PASSED,result.getType());
         }
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
-        assertEquals(ValidationStatusResponse.Result.Type.PASSED,results.get(0).getType());
     }
 
     private void mockRules() throws IOException {
