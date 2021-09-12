@@ -25,6 +25,8 @@ import java.time.temporal.ChronoUnit;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.convert.DurationUnit;
 
@@ -53,6 +55,10 @@ public class DgcConfigProperties {
 
     private String keyStoreFile;
     private String keyStorePassword;
-    private String privateKeyPassword;
-
+    private String privateKeyPassword; 
+    @Value("${dgc.encAliases}")
+    private String[] encAliases;
+    @Value("${dgc.signAliases}")
+    private String[] signAliases;
+    private String activeSignKey;
 }

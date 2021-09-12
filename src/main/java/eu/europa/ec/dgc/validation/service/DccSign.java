@@ -15,23 +15,23 @@ import org.springframework.stereotype.Service;
 public class DccSign {
     public final static String SIG_ALG = "SHA256withECDSA";
 
-    public String signDcc(String dcc, PrivateKey privateKey) {
+    public String signDcc(byte[] data, PrivateKey privateKey) {
         try {
             Signature signature = Signature.getInstance(SIG_ALG);
             signature.initSign(privateKey);
-            signature.update(dcc.getBytes(StandardCharsets.UTF_8));
+            signature.update(data);
             return Base64.getEncoder().encodeToString(signature.sign());
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new DccException("can not sign dcc",e);
         }
     }
 
-    public boolean verifySignature(String dcc, String dccSignatureBase64, PublicKey publicKey) {
+    public boolean verifySignature(byte[] data, byte[] sig, PublicKey publicKey) {
         try {
             Signature signature = Signature.getInstance(SIG_ALG);
             signature.initVerify(publicKey);
-            signature.update(dcc.getBytes(StandardCharsets.UTF_8));
-            return signature.verify(Base64.getDecoder().decode(dccSignatureBase64));
+            signature.update(data);
+            return signature.verify(sig);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             throw new DccException("can not sign dcc",e);
         }

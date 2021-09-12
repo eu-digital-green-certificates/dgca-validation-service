@@ -90,11 +90,13 @@ public class ValidationServiceTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        encodeDcc(dcc, dccValidationRequest,iv);
-        String dccSign = signDcc(dcc,keyPair.getPrivate());
+
+        byte[] data=encodeDcc(dcc, dccValidationRequest,iv);
+        String dccSign = signDcc(data,keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
         dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
-        dccValidationRequest.setKid(keyProvider.getKid(KeyType.ValidationServiceEncKey));
+
+        dccValidationRequest.setKid(keyProvider.getKid(keyProvider.getKeyNames(KeyType.ValidationServiceEncKey)[0]));
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
@@ -105,7 +107,7 @@ public class ValidationServiceTest {
 
         String resultToken = validationService.validate(dccValidationRequest, accessToken);
 
-        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(KeyType.ValidationServiceSignKey).getPublicKey()).parse(resultToken);
+        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.ValidationServiceSignKey)[0]).getPublicKey()).parse(resultToken);
         System.out.println(token);
 
         ValidationDevRequest validationDevRequest = new ValidationDevRequest();
@@ -129,13 +131,14 @@ public class ValidationServiceTest {
         return kf.generatePrivate(spec);
     }
 
-
-    private void encodeDcc(String dcc, DccValidationRequest dccValidationRequest,byte[] iv) {
+    private byte[] encodeDcc(String dcc, DccValidationRequest dccValidationRequest,byte[] iv) {
         EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                keyProvider.receiveCertificate(KeyType.ValidationServiceEncKey).getPublicKey(), RsaOaepWithSha256AesCBC.ENC_SCHEMA,iv);
+                                    keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0]).getPublicKey(), 
+                                    RsaOaepWithSha256AesCBC.ENC_SCHEMA,iv);
         dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
         dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));
         dccValidationRequest.setEncScheme(RsaOaepWithSha256AesCBC.ENC_SCHEMA);
+        return encryptedData.getDataEncrypted();
     }
 
     private AccessTokenPayload createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {
@@ -168,8 +171,8 @@ public class ValidationServiceTest {
         return accessTokenPayload;
     }
 
-    private String signDcc(String dcc, PrivateKey privateKey)  {
-        return dccSign.signDcc(dcc, privateKey);
+    private String signDcc(byte[] data, PrivateKey privateKey)  {
+        return dccSign.signDcc(data, privateKey);
     }
 
 }

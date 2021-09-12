@@ -5,6 +5,7 @@ import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.exception.DccException;
+import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
@@ -26,8 +27,13 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -67,6 +73,45 @@ public class ValidationService {
         return validationInitResponse;
     }
 
+    private boolean checkMandatoryFields(AccessTokenPayload accessToken)
+    {
+        AccessTokenType tokenType= AccessTokenType.getTokenForInt(accessToken.getType());
+
+        if(accessToken.getExp()<Instant.now().getEpochSecond())
+            return false;
+
+        if(accessToken.getIat()>Instant.now().getEpochSecond())
+            return false;
+
+        if(accessToken.getConditions()==null)
+            return false;
+
+        AccessTokenConditions conditions = accessToken.getConditions();
+
+        if(conditions.getValidFrom()==null || conditions.getDob()==null|| conditions.getValidTo()==null|| conditions.getLang()==null || conditions.getType()==null)
+            return false;
+
+        if(tokenType == AccessTokenType.Structure && conditions.getHash()==null)
+            return false;
+         
+        if(tokenType.intValue()>AccessTokenType.Structure.intValue())
+        {
+            if(conditions.getFnt()==null ||
+               conditions.getGnt()==null||
+               conditions.getValidationClock()==null)
+                return false;
+
+            if(tokenType == AccessTokenType.Full && (
+                conditions.getRoa() == null ||
+                conditions.getRod() == null ||
+                conditions.getCoa() == null ||
+                conditions.getCod() == null))
+                return false;
+        }
+
+        return true;
+    }
+
     public String validate(DccValidationRequest dccValidationRequest, String accessTokenCompact) {
         String kid = accessTokenParser.extractKid(accessTokenCompact);
         AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey(kid));
@@ -77,15 +122,21 @@ public class ValidationService {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
             }
-            String dcc = decodeDcc(dccValidationRequest, validationInquiry);
-            if (!checkSignature(dcc,dccValidationRequest,validationInquiry.getPublicKey())) {
+
+            if(!checkMandatoryFields(accessToken))
+                throw new DccException("Validation Conditions missing or not properly set",HttpStatus.BAD_REQUEST.value());
+
+            if (!checkSignature(org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
+                                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
+                                validationInquiry.getPublicKey())) {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
             }
+            String dcc = decodeDcc(dccValidationRequest, validationInquiry);
+
             ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
             List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
             resultTokenBuilder.results(results);
-            resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(KeyType.ValidationServiceSignKey),
-                    keyProvider.getKid(KeyType.ValidationServiceSignKey));
+            resultToken  = resultTokenBuilder.build(keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
@@ -95,15 +146,15 @@ public class ValidationService {
         return resultToken;
     }
 
-    private boolean checkSignature(String dcc, DccValidationRequest dccValidationRequest, String publicKeyBase64) {
+    private boolean checkSignature(byte[] data, byte[] signature, String publicKeyBase64) {
         try {
-            byte[] keyBytes = Base64.getDecoder().decode(publicKeyBase64);
+            byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
             KeyFactory kf = KeyFactory.getInstance("EC");
             PublicKey publicKey = kf.generatePublic(spec);
-            return dccSign.verifySignature(dcc, dccValidationRequest.getSig(), publicKey);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new DccException("can not initialize signature validation",e);
+            return dccSign.verifySignature(data, signature, publicKey);
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -112,8 +163,16 @@ public class ValidationService {
         encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
         encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
         String dcc = new String(dccCryptService.decryptData(encryptedData,
-                keyProvider.receivePrivateKey(KeyType.ValidationServiceEncKey),
+                keyProvider.receivePrivateKey(keyProvider.getKeyName( dccValidationRequest.getKid())),
                 dccValidationRequest.getEncScheme(),validationInquiry.getNonce()),StandardCharsets.UTF_8);
         return dcc;
+    }
+
+    private String cleanKeyString(String rawKey) {
+        return rawKey.replaceAll("\\n", "")
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "");
     }
 }

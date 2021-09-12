@@ -35,4 +35,8 @@ jobs:
     - name: docker
       run: |-
         docker build . \
-        --file ./Dockerfile
+        --file ./docker/CloudFoundry
+    - name: docker
+      run: |-
+        docker build . \
+        --file ./docker/Native

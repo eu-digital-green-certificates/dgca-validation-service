@@ -7,4 +7,5 @@ public class PublicKeyJWK {
     private String x5c;
     private String kid;
     private String alg;
+    private String use;
 }
