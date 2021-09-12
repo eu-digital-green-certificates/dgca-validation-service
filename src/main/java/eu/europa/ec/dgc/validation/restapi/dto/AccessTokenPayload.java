@@ -13,7 +13,7 @@ public class AccessTokenPayload {
     private long exp;
     @JsonProperty("t")
     private int type;
-    @JsonProperty("c")
+    @JsonProperty("v")
     private String version;
     @JsonProperty("vc")
     private AccessTokenConditions conditions;
