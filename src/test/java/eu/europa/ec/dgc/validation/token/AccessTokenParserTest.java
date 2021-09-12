@@ -53,7 +53,7 @@ class AccessTokenParserTest {
         System.out.println(accessTokenCompact);
 
         PublicKey publicKey = ValidationServiceTest.parsePublicKey(ValidationServiceTest.EC_PUBLIC_KEY);
-        assertEquals(KID_JUNIT,accessTokenParser.extractKid(accessTokenCompact));
+        
         AccessTokenPayload accessTokenParsed = accessTokenParser.parseToken(accessTokenCompact, publicKey);
         assertNotNull(accessTokenParsed);
         assertNotNull(accessTokenParsed.getConditions());
