@@ -29,7 +29,7 @@ public interface BusinessRuleRepository extends JpaRepository<BusinessRuleEntity
 
     List<BusinessRuleListItemDto> findAllByOrderByIdentifierAsc();
 
-    List<BusinessRuleListItemDto> findAllByCountryOrderByIdentifierAsc(String country);
+    List<BusinessRuleListItemDto> findAllByCountryInOrderByIdentifierAsc(List<String> countries);
 
     BusinessRuleEntity findOneByCountryAndHash(String country, String hash);
 

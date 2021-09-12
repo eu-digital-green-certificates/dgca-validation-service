@@ -193,7 +193,7 @@ class DccValidatorTest {
         businessRuleEntity.setIdentifier("junit");
         businessRuleEntity.setVersion("1.0.0");
         businessRuleEntity.setRawData(Files.readString(Path.of("src/test/resources/testrule.json")));
-        doReturn(ruleListItemDtos).when(businessRuleService).getBusinessRulesListForCountry(anyString());
+        doReturn(ruleListItemDtos).when(businessRuleService).getBusinessRulesListForCountry(anyString(),anyString());
         doReturn(businessRuleEntity).when(businessRuleService).getBusinessRuleByCountryAndHash(anyString(),anyString());
     }
 

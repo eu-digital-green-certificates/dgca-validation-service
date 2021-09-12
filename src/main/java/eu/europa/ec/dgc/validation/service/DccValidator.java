@@ -38,6 +38,8 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -198,11 +200,31 @@ public class DccValidator {
 
     private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
                                List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
+        
+        ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
+
         String countryOfArrival = accessTokenConditions.getCoa();
-        List<Rule> rules = rulesCache.provideRules
-                (countryOfArrival);
+        String certificateType = greenCertificateData.getGreenCertificate().getType().toString();
+        List<Rule> rules = rulesCache.provideRules(countryOfArrival,greenCertificateData.getIssuingCountry())
+                                     .stream()
+                                     .filter(t -> ((t.getRuleCertificateType().toString().toLowerCase() == certificateType.toLowerCase() || 
+                                                        t.getRuleCertificateType().toString() == "General"
+                                                   ) 
+                                                    && (t.getValidFrom().isAfter(validationClock)|| t.getValidFrom().isEqual(validationClock))
+                                                    && t.getType() == dgca.verifier.app.engine.data.Type.ACCEPTANCE)
+                                                  ||
+                                                  (
+                                                    (t.getRuleCertificateType().toString().toLowerCase() == certificateType.toLowerCase() || 
+                                                        t.getRuleCertificateType().toString() == "General") 
+                                                    && (t.getValidFrom().isAfter(validationClock)|| t.getValidFrom().isEqual(validationClock))
+                                                    && t.getType() == dgca.verifier.app.engine.data.Type.INVALIDATION
+                                                    && t.getCountryCode() == greenCertificateData.getIssuingCountry()
+                                                  )
+                                            )       
+                                     .map(t -> t)
+                                     .collect(Collectors.toList());;
+
         if (rules!=null && rules.size()>0) {
-            ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
             String kidBase64 = Base64.getEncoder().encodeToString(kid);
             Map<String, List<String>> valueSets = valueSetCache.provideValueSets();
             ExternalParameter externalParameter = new ExternalParameter(validationClock, valueSets, countryOfArrival,

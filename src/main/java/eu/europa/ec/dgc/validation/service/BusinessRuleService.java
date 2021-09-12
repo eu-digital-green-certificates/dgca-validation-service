@@ -61,10 +61,12 @@ public class BusinessRuleService {
     /**
      *  Gets list of all business rules ids and hashes for a country.
      */
-    public List<BusinessRuleListItemDto> getBusinessRulesListForCountry(String country) {
-
+    public List<BusinessRuleListItemDto> getBusinessRulesListForCountry(String country, String issuerCountry) {
+        List<String> list = new ArrayList<String>();
+        list.add(country.toUpperCase(Locale.ROOT));
+        list.add(issuerCountry.toUpperCase(Locale.ROOT));
         List<BusinessRuleListItemDto> rulesItems =
-            businessRuleRepository.findAllByCountryOrderByIdentifierAsc(country.toUpperCase(Locale.ROOT));
+            businessRuleRepository.findAllByCountryInOrderByIdentifierAsc(list);
         return rulesItems;
     }
 

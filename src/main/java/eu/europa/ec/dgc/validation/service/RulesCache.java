@@ -35,19 +35,19 @@ public class RulesCache {
 
     private final static TemporalAmount expireSpan = Duration.ofMinutes(15);
 
-    public List<Rule> provideRules(String countryOfDeparture) {
-        List<Rule> rules = rulesMap.get(countryOfDeparture);
+    public List<Rule> provideRules(String countryOfArrival, String issuerCountry) {
+        List<Rule> rules = rulesMap.get(countryOfArrival);
         if (rules==null || expireTime==null || expireTime.isAfter(LocalTime.now())) {
-            rules = getRules(countryOfDeparture);
-            rulesMap.put(countryOfDeparture, rules);
+            rules = getRules(countryOfArrival,issuerCountry);
+            rulesMap.put(countryOfArrival, rules);
             expireTime = LocalTime.now().plus(expireSpan);
         }
         return rules;
     }
 
     @NotNull
-    private List<Rule> getRules(String countryOfDeparture) {
-        List<BusinessRuleListItemDto> rulesDto = businessRuleService.getBusinessRulesListForCountry(countryOfDeparture);
+    private List<Rule> getRules(String countryOfArrival,String issuerCountry) {
+        List<BusinessRuleListItemDto> rulesDto = businessRuleService.getBusinessRulesListForCountry(countryOfArrival,issuerCountry);
         List<Rule> rules = new ArrayList<>();
         for (BusinessRuleListItemDto ruleDto : rulesDto) {
             BusinessRuleEntity ruleData = businessRuleService.getBusinessRuleByCountryAndHash(ruleDto.getCountry(), ruleDto.getHash());
