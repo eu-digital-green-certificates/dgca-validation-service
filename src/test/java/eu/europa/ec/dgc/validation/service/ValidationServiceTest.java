@@ -71,10 +71,9 @@ public class ValidationServiceTest {
 
         ValidationInitRequest validationInitRequest = new ValidationInitRequest();
         validationInitRequest.setKeyType("EC");
-        validationInitRequest.setSubject(subject);
         validationInitRequest.setPubKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         validationInitRequest.setNonce(Base64.getEncoder().encodeToString(iv));
-        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest);
+        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest,"junit");
         assertNotNull(initResponse);
         System.out.println("init request");
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(validationInitRequest));
