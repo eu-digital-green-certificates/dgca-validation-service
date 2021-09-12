@@ -3,6 +3,7 @@ package eu.europa.ec.dgc.validation.service.impl;
 import eu.europa.ec.dgc.utils.CertificateUtils;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.entity.KeyType;
+import eu.europa.ec.dgc.validation.entity.KeyUse;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +24,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
 import javax.annotation.PostConstruct;
+
+import com.nimbusds.jose.util.ArrayUtils;
 
 import eu.europa.ec.dgc.validation.service.KeyProvider;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +42,11 @@ import org.springframework.stereotype.Service;
 public class KeyStoreKeyProvider implements KeyProvider {
     private final DgcConfigProperties dgcConfigProperties;
 
-    private final Map<KeyType, Certificate> certificates = new HashMap<>();
-    private final Map<KeyType, PrivateKey> privateKeys = new HashMap<>();
-    private final Map<KeyType, String> kids = new HashMap<>();
+    private final Map<String, Certificate> certificates = new HashMap<>();
+    private final Map<String, PrivateKey> privateKeys = new HashMap<>();
+    private final Map<String, String> kids = new HashMap<>();
+    private final Map<String, String> algs = new HashMap<>();
+    private final Map<String, String> kidToName = new HashMap<>();
 
     @PostConstruct
     public void createKeys() throws NoSuchAlgorithmException, IOException, CertificateException,
@@ -67,29 +74,74 @@ public class KeyStoreKeyProvider implements KeyProvider {
             KeyStore.PasswordProtection keyPassword =
                     new KeyStore.PasswordProtection(keyStorePassword);
 
-            for (KeyType keyType : KeyType.values()) {
-                String keyName = keyType.name().toLowerCase();
+            for (String alias : getKeyNames(KeyType.All)){
                 KeyStore.PrivateKeyEntry privateKeyEntry =
-                        (KeyStore.PrivateKeyEntry) keyStore.getEntry(keyName, keyPassword);
-                Certificate cert = keyStore.getCertificate(keyName);
+                        (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, keyPassword);
+
+                if( privateKeyEntry == null)
+                  continue;
+
+                X509Certificate cert = (X509Certificate)keyStore.getCertificate(alias);
                 PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-                certificates.put(keyType, cert);
-                privateKeys.put(keyType, privateKey);
-                kids.put(keyType,certificateUtils.getCertKid((X509Certificate) cert));
-            }
+                certificates.put(alias, cert);
+                privateKeys.put(alias, privateKey);
+                String kid = certificateUtils.getCertKid((X509Certificate) cert);
+                kids.put(alias,kid);
+                kidToName.put(kid, alias);
+
+                if(cert.getSigAlgOID().contains("1.2.840.113549.1.1.1")) 
+                 algs.put(alias, "RS256");
+                if(cert.getSigAlgOID().contains("1.2.840.113549.1.1.10"))
+                 algs.put(alias, "PS256");
+                if(cert.getSigAlgOID().contains("1.2.840.10045.4.3.2"))
+                 algs.put(alias, "ES256"); 
+            }  
         }
+    }
+    
+    @Override
+    public Certificate receiveCertificate(String keyName) {
+        return certificates.get(keyName);
+    }
+    @Override
+    public PrivateKey receivePrivateKey(String keyName) {
+        return privateKeys.get(keyName);
+    }
+    @Override
+    public String[] getKeyNames(KeyType type) {
+        if(type == KeyType.ValidationServiceEncKey)
+            return dgcConfigProperties.getEncAliases();
+
+        if(type == KeyType.ValidationServiceSignKey)
+            return dgcConfigProperties.getSignAliases();
+
+        return ArrayUtils.concat(dgcConfigProperties.getEncAliases(), dgcConfigProperties.getSignAliases());
     }
 
     @Override
-    public Certificate receiveCertificate(KeyType keyType) {
-        return certificates.get(keyType);
+    public String getKid(String keyName) {
+        return kids.get(keyName);
     }
+
     @Override
-    public PrivateKey receivePrivateKey(KeyType keyType) {
-        return privateKeys.get(keyType);
+    public String getAlg(String keyName) {
+        return algs.get(keyName);
     }
+
     @Override
-    public String getKid(KeyType keyType) {
-        return kids.get(keyType);
+    public String getActiveSignKey() {
+        return dgcConfigProperties.getActiveSignKey();
+    }
+
+    @Override
+    public  String getKeyName(String kid) {
+        return kidToName.get(kid);
+    }
+
+    @Override
+    public KeyUse getKeyUse(String keyName) {
+       if( Set.of(dgcConfigProperties.getEncAliases()).contains(keyName))
+        return KeyUse.enc;
+      return KeyUse.sig;
     }
 }

@@ -1,3 +1,3 @@
 package eu.europa.ec.dgc.validation.entity;
 
-public enum KeyType {ValidationServiceEncKey, ValidationServiceSignKey}
+public enum KeyType {All,ValidationServiceEncKey, ValidationServiceSignKey}

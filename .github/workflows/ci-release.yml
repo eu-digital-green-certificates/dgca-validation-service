@@ -43,7 +43,22 @@ jobs:
         --username "${APP_PACKAGES_USERNAME}" \
         --password-stdin
         docker build . \
-        --file ./Dockerfile \
+        --file ./docker/Cloudfoundry \
+        --tag "${APP_PACKAGES_URL}:latest" \
+        --tag "${APP_PACKAGES_URL}:${APP_VERSION}"
+        docker push "${APP_PACKAGES_URL}:latest"
+        docker push "${APP_PACKAGES_URL}:${APP_VERSION}"
+      env:
+        APP_PACKAGES_URL: docker.pkg.github.com/${{ github.repository }}/dgca-validation-service-cloudfoundry
+        APP_PACKAGES_USERNAME: ${{ github.actor }}
+        APP_PACKAGES_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+    - name: docker
+      run: |-
+        echo "${APP_PACKAGES_PASSWORD}" | docker login "${APP_PACKAGES_URL}" \
+        --username "${APP_PACKAGES_USERNAME}" \
+        --password-stdin
+        docker build . \
+        --file ./docker/Native \
         --tag "${APP_PACKAGES_URL}:latest" \
         --tag "${APP_PACKAGES_URL}:${APP_VERSION}"
         docker push "${APP_PACKAGES_URL}:latest"
@@ -83,7 +98,7 @@ jobs:
         cf push ${APP_NAME} --docker-image ${APP_IMAGE}:${APP_VERSION} --docker-username ${CF_DOCKER_USERNAME}
       env:
         APP_NAME: dgca-validation-service
-        APP_IMAGE: docker.pkg.github.com/${{ github.repository }}/dgca-validation-service
+        APP_IMAGE: docker.pkg.github.com/${{ github.repository }}/dgca-validation-service-cloudfoundry
         CF_API: ${{ secrets.CF_API }}
         CF_ORG: ${{ secrets.CF_ORG }}
         CF_SPACE: ${{ secrets.CF_SPACE }}
