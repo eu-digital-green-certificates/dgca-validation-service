@@ -1,6 +1,8 @@
 package eu.europa.ec.dgc.validation.restapi.controller;
 
+import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
+import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.service.ValidationService;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ValidationController {
     private final ValidationService validationService;
     private final ValidationStoreService validationStoreService;
+    private final DgcConfigProperties dgcConfigProperties;
 
     @Operation(
             summary = "validation initialization",
@@ -43,7 +47,15 @@ public class ValidationController {
     @PutMapping(value = "/initialize/{subject}", consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ValidationInitResponse> initValidation(@PathVariable String subject,
-            @Valid @RequestBody ValidationInitRequest validationInitRequest) {
+            @Valid @RequestBody ValidationInitRequest validationInitRequest,
+            @RequestHeader("Authorization") String accessToken,
+            @RequestHeader("X-Version") String version) {
+
+        AccessTokenPayload accessTokenPayload = validationService.validateAccessToken(dgcConfigProperties.getServiceUrl()+"/initialize/"+subject,subject,accessToken);
+
+        if(accessTokenPayload==null)
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        
         return new ResponseEntity<ValidationInitResponse>(validationService.initValidation(validationInitRequest,subject),
                                                          HttpStatus.CREATED);
     }
@@ -59,7 +71,15 @@ public class ValidationController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "410", description = "Gone. Subject does not exist anymore (TTL expired).")})
     @GetMapping(value = "/status/{subject}", produces = "application/jwt")
-    public ResponseEntity<String> checkValidationStatus(@PathVariable String subject) {
+    public ResponseEntity<String> checkValidationStatus(@PathVariable String subject, 
+                                                        @RequestHeader("Authorization") String accessToken,
+                                                        @RequestHeader("X-Version") String version) {
+
+        AccessTokenPayload accessTokenPayload = validationService.validateAccessToken(dgcConfigProperties.getServiceUrl()+"/status/"+subject,subject,accessToken);
+
+        if(accessTokenPayload==null)
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         ResponseEntity responseEntity;
         if (validationInquiry==null) {

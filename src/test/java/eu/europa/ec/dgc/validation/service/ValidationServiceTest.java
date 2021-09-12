@@ -104,7 +104,7 @@ public class ValidationServiceTest {
 
         System.out.println("jwt: "+accessToken);
 
-        String resultToken = validationService.validate(dccValidationRequest, accessToken);
+        String resultToken = validationService.validate(dccValidationRequest, accessTokenPayload);
 
         Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.ValidationServiceSignKey)[0]).getPublicKey()).parse(resultToken);
         System.out.println(token);

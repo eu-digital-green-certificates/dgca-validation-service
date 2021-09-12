@@ -17,6 +17,9 @@ import eu.europa.ec.dgc.validation.service.impl.MemoryTokenBlackListService;
 import eu.europa.ec.dgc.validation.service.impl.MemoryValidationStoreService;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwt;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +44,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @RequiredArgsConstructor
 public class ValidationService {
+    private static final String TOKEN_PREFIX = "Bearer ";
     private final ValidationStoreService validationStoreService;
     private final DgcConfigProperties dgcConfigProperties;
     private final KeyProvider keyProvider;
@@ -50,6 +54,55 @@ public class ValidationService {
     private final DccSign dccSign;
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
+
+    public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact)
+    {
+        if (accessTokenCompact!=null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
+           String plainToken= accessTokenCompact.substring(TOKEN_PREFIX.length());
+           Jwt token = accessTokenParser.extractPayload(plainToken);
+
+           String kid = (String)token.getHeader().get("kid");
+
+           if(kid == null)
+                return null;
+
+           String alg = (String)token.getHeader().get("alg");
+
+           switch(alg)
+           {
+               case "RS256":{}
+                break;
+               case "ES256":{}
+                break;
+               case "PS256":{}
+                break;
+               default:
+                return null;
+           }
+
+           Claims claims = (Claims)token.getBody();
+      
+           if(claims.containsKey("exp") &&  claims.getExpiration().toInstant().getEpochSecond()<Instant.now().getEpochSecond())
+             return null;
+           
+           if(claims.containsKey("iat") &&  claims.getIssuedAt().toInstant().getEpochSecond()>Instant.now().getEpochSecond())
+             return null;
+
+           if(claims.containsKey("aud") &&  !claims.getAudience().equals(audience))
+             return null;
+
+           if(claims.containsKey("sub") &&  !claims.getSubject().equals(subject))
+             return null;
+
+           try {
+            AccessTokenPayload accessToken = accessTokenParser.parseToken(plainToken, accessTokenKeyProvider.getPublicKey(kid)); 
+            return accessToken;
+           } catch (Exception e) {
+               return null;
+           }    
+        }
+        return null;
+    }
 
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
@@ -76,12 +129,6 @@ public class ValidationService {
     private boolean checkMandatoryFields(AccessTokenPayload accessToken)
     {
         AccessTokenType tokenType= AccessTokenType.getTokenForInt(accessToken.getType());
-
-        if(accessToken.getExp()<Instant.now().getEpochSecond())
-            return false;
-
-        if(accessToken.getIat()>Instant.now().getEpochSecond())
-            return false;
 
         if(accessToken.getConditions()==null)
             return false;
@@ -112,9 +159,7 @@ public class ValidationService {
         return true;
     }
 
-    public String validate(DccValidationRequest dccValidationRequest, String accessTokenCompact) {
-        String kid = accessTokenParser.extractKid(accessTokenCompact);
-        AccessTokenPayload accessToken = accessTokenParser.parseToken(accessTokenCompact, accessTokenKeyProvider.getPublicKey(kid));
+    public String validate(DccValidationRequest dccValidationRequest, AccessTokenPayload accessToken) {
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;

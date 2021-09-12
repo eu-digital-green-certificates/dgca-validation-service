@@ -9,6 +9,7 @@ public class AccessTokenPayload {
     private String iss;
     private long iat;
     private String sub;
+    private String aud;
     private long exp;
     private int type;
     private String version;
