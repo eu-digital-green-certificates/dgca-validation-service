@@ -7,6 +7,8 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
 import java.security.PublicKey;
+
+import org.apache.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +21,7 @@ public class AccessTokenParser {
             String payloadJson = objectMapper.writeValueAsString(token.getBody());
             return objectMapper.readValue(payloadJson,AccessTokenPayload.class);
         } catch (JsonProcessingException e) {
-            throw new DccException("can not parse access token "+e.getMessage(),e);
+            throw new DccException("can not parse access token "+e.getMessage(),HttpStatus.SC_BAD_REQUEST);
         }
     }
 

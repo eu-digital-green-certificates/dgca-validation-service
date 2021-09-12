@@ -73,7 +73,6 @@ public class DccValidator {
 
     public List<ValidationStatusResponse.Result> validate(String dcc, AccessTokenConditions accessTokenConditions, AccessTokenType accessTokenType) {
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
-
         VerificationResult verificationResult = new VerificationResult();
         String dccPlain = prefixValidationService.decode(dcc,verificationResult);
         if (verificationResult.getContextPrefix()==null) {
