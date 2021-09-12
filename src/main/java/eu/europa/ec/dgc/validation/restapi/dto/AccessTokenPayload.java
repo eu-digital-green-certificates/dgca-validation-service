@@ -11,7 +11,10 @@ public class AccessTokenPayload {
     private String sub;
     private String aud;
     private long exp;
+    @JsonProperty("t")
     private int type;
+    @JsonProperty("c")
     private String version;
+    @JsonProperty("vc")
     private AccessTokenConditions conditions;
 }
