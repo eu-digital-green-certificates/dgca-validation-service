@@ -42,7 +42,7 @@ jobs:
         echo "${APP_PACKAGES_PASSWORD}" | docker login "${APP_PACKAGES_URL}" \
         --username "${APP_PACKAGES_USERNAME}" \
         --password-stdin
-        docker build .. \
+        docker build . \
         --file ./docker/Cloudfoundry \
         --tag "${APP_PACKAGES_URL}:latest" \
         --tag "${APP_PACKAGES_URL}:${APP_VERSION}"
@@ -57,7 +57,7 @@ jobs:
         echo "${APP_PACKAGES_PASSWORD}" | docker login "${APP_PACKAGES_URL}" \
         --username "${APP_PACKAGES_USERNAME}" \
         --password-stdin
-        docker build .. \
+        docker build . \
         --file ./docker/Native \
         --tag "${APP_PACKAGES_URL}:latest" \
         --tag "${APP_PACKAGES_URL}:${APP_VERSION}"

@@ -34,9 +34,9 @@ jobs:
         APP_PACKAGES_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
     - name: docker
       run: |-
-        docker build .. \
+        docker build . \
         --file ./docker/CloudFoundry
     - name: docker
       run: |-
-        docker build .. \
+        docker build . \
         --file ./docker/Native
