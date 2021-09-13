@@ -1,5 +1,5 @@
 FROM adoptopenjdk:11-jre-hotspot as build
-COPY ./target/*.jar /app/app.jar
+COPY ./../target/*.jar /app/app.jar
 WORKDIR /app
 
 FROM nginx:alpine
