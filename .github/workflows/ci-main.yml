@@ -59,7 +59,7 @@ jobs:
         echo "${APP_PACKAGES_PASSWORD}" | docker login "${APP_PACKAGES_URL}" \
         --username "${APP_PACKAGES_USERNAME}" \
         --password-stdin
-        docker build . \
+        docker build .. \
         --file ./docker/Native \
         --tag "${APP_PACKAGES_URL}:${APP_VERSION}"
         docker push "${APP_PACKAGES_URL}:${APP_VERSION}"
