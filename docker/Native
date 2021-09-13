@@ -1,6 +1,6 @@
 FROM adoptopenjdk:11-jre-hotspot
 COPY ./target/*.jar /app/app.jar
-COPY ./../certs/dev-test.jks /certs/dev-test.jks
+COPY ./certs/dev-test.jks /certs/dev-test.jks
 WORKDIR /app
 ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar ./app.jar" ]
 EXPOSE 8080
