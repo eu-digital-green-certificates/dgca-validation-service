@@ -114,6 +114,7 @@ public class SignerInformationService {
         for (TrustListItem cert : trustedCerts) {
             if (!alreadyStoredCerts.contains(cert.getKid())) {
                 saveSignerCertificate(cert.getKid(),cert.getTimestamp(), cert.getRawData());
+                log.debug("Kid saved: "+cert.getKid());
             }
         }
     }
