@@ -197,8 +197,10 @@ public class ValidationService {
 
     private boolean checkSignature(String sigAlg,byte[] data, byte[] signature, String publicKeyBase64) {
         try {
-            if(sigAlg!="EC" && sigAlg!="RSA")
+            if(!sigAlg.contains("ECDSA") && !sigAlg.contains("RSA"))
                 return false;
+
+            sigAlg = sigAlg.contains("ECDSA")?"EC":"RSA";
 
             byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
