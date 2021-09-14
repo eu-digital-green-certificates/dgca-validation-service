@@ -34,9 +34,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.asymmetric.X509;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +51,10 @@ public class SignerInformationService {
 
     private final SignerInformationRepository signerInformationRepository;
 
-
+    @PostConstruct
+    private void init() {
+        X509CertUtils.setProvider(new BouncyCastleProvider());
+    }
     /**
      * Method to query the db for a certificate with a resume token.
      *
