@@ -64,8 +64,10 @@ public class SignerInformationService {
 
     public List<Certificate> getCertificates(String kid) {
         List<Certificate> certificates = new ArrayList<>();
-        log.debug("Find result by kid:"+kid);
+        log.debug("Search result by kid:"+kid);
+        log.debug("Repo contains:"+signerInformationRepository.count());
         for (SignerInformationEntity signerInformationEntity : signerInformationRepository.findAllByKid(kid)) {
+            log.debug("Found certificates:"+signerInformationEntity.getKid());
             Certificate certificate = X509CertUtils.parse(signerInformationEntity.getRawData());
             if (certificate!=null) {
                 certificates.add(certificate);
