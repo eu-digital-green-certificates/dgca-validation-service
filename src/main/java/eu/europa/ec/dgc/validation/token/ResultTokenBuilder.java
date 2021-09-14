@@ -1,6 +1,7 @@
 package eu.europa.ec.dgc.validation.token;
 
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
+import eu.europa.ec.dgc.validation.restapi.dto.ResultTypeIdentifier;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse.Result.ResultType;
 import io.jsonwebtoken.JwtBuilder;
@@ -23,17 +24,27 @@ public class ResultTokenBuilder {
         builder.setHeaderParam("typ","JWT");
     }
 
+    public static String evaluateResult(List<ValidationStatusResponse.Result> results)
+    {
+        boolean nok =results!=null? results.stream().anyMatch(t->t.getResult() == ResultType.NOK && 
+                                                              t.getType() == ResultTypeIdentifier.TechnicalVerification ||
+                                                              (t.getType() == ResultTypeIdentifier.IssuerInvalidation && t.getResult() == ResultType.NOK)):false;
+        boolean chk =results!=null? (results.stream().anyMatch(t->t.getResult() == ResultType.CHK || 
+                                      (t.getResult()==ResultType.NOK && 
+                                       t.getType()!=ResultTypeIdentifier.TechnicalVerification)
+                                    ) || results.size()==0):true;
+
+        String result = nok?"NOK":chk?"CHK" :"OK";
+        return result;
+    }
+
     public String build(List<ValidationStatusResponse.Result> results, 
                         String subject,
                         String issuer, 
                         PrivateKey privateKey, 
                         String kid) {
-      
-        boolean nok =results!=null? results.stream().anyMatch(t->t.getResult() == ResultType.NOK):false;
-        boolean chk =results!=null? (results.stream().anyMatch(t->t.getResult() == ResultType.CHK) || results.size()==0):true;
-       
-        String result = chk?"CHK": nok?"NOK":"OK";
 
+        String result = evaluateResult(results);
         String confirmation =  builder2.setHeaderParam("kid",kid)
                                       .setId(UUID.randomUUID().toString())
                                       .setHeaderParam("alg", "ES256")
