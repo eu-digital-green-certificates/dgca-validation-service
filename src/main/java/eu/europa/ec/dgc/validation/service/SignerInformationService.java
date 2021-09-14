@@ -75,7 +75,16 @@ public class SignerInformationService {
         log.debug("Repo contains:"+signerInformationRepository.count());
         for (SignerInformationEntity signerInformationEntity : signerInformationRepository.findAllByKid(kid)) {
             log.debug("Found certificates:"+signerInformationEntity.getKid());
-            X509Certificate certificate = X509CertUtils.parse(signerInformationEntity.getRawData());
+
+            X509Certificate certificate = X509CertUtils.parse(X509CertUtils.PEM_BEGIN_MARKER+
+                                                              signerInformationEntity.getRawData()+
+                                                              X509CertUtils.PEM_END_MARKER);
+
+            if(signerInformationEntity.getRawData().contains(X509CertUtils.PEM_BEGIN_MARKER))
+            {
+                certificate = X509CertUtils.parse(signerInformationEntity.getRawData());    
+            }
+            
             if (certificate!=null) {
                 certificates.add(certificate);
             }
