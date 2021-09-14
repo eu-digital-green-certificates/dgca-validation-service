@@ -39,7 +39,7 @@ public class DgcConfigProperties {
 
     private final GatewayDownload valueSetsDownload = new GatewayDownload();
 
-    private final GatewayDownload countryListDownload = new GatewayDownload();
+    private final GatewayDownload certificatesDownloader = new GatewayDownload();
 
     @Getter
     @Setter
