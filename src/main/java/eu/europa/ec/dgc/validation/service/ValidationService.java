@@ -197,7 +197,7 @@ public class ValidationService {
 
     private boolean checkSignature(String sigAlg,byte[] data, byte[] signature, String publicKeyBase64) {
         try {
-            if(sigAlg!="EC" || sigAlg!="RSA")
+            if(sigAlg!="EC" && sigAlg!="RSA")
                 return false;
 
             byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
