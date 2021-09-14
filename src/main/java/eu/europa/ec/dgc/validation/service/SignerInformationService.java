@@ -64,12 +64,14 @@ public class SignerInformationService {
 
     public List<Certificate> getCertificates(String kid) {
         List<Certificate> certificates = new ArrayList<>();
+        log.debug("Find result by kid:"+kid);
         for (SignerInformationEntity signerInformationEntity : signerInformationRepository.findAllByKid(kid)) {
             Certificate certificate = X509CertUtils.parse(signerInformationEntity.getRawData());
             if (certificate!=null) {
                 certificates.add(certificate);
             }
         }
+        log.debug("Found certificates:"+certificates.size());
         return certificates;
     }
 
@@ -106,6 +108,7 @@ public class SignerInformationService {
 
         if (trustedCertsKids.isEmpty()) {
             signerInformationRepository.deleteAll();
+            log.debug("Removed all certificates.");
         } else {
             signerInformationRepository.deleteByKidNotIn(trustedCertsKids);
         }
