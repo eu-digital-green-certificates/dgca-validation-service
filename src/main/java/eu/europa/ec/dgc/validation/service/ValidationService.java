@@ -172,7 +172,8 @@ public class ValidationService {
             if(!checkMandatoryFields(accessToken))
                 throw new DccException("Validation Conditions missing or not properly set",HttpStatus.BAD_REQUEST.value());
 
-            if (!checkSignature(org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
+            if (!checkSignature(dccValidationRequest.getSigAlg(),
+                                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
                                 org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
                                 validationInquiry.getPublicKey())) {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
@@ -194,11 +195,14 @@ public class ValidationService {
         return resultToken;
     }
 
-    private boolean checkSignature(byte[] data, byte[] signature, String publicKeyBase64) {
+    private boolean checkSignature(String sigAlg,byte[] data, byte[] signature, String publicKeyBase64) {
         try {
+            if(sigAlg!="EC" || sigAlg!="RSA")
+                return false;
+
             byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory kf = KeyFactory.getInstance("EC");
+            KeyFactory kf = KeyFactory.getInstance(sigAlg);
             PublicKey publicKey = kf.generatePublic(spec);
             return dccSign.verifySignature(data, signature, publicKey);
         } catch (Exception e) {
