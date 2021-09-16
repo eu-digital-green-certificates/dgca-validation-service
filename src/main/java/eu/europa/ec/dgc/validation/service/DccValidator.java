@@ -149,7 +149,7 @@ public class DccValidator {
                 validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
                 validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
                 if (accessTokenType==AccessTokenType.Full) {
-                    validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid());
+                    validateRules(greenCertificateData, verificationResult, results, accessTokenConditions, coseData.getKid(),certLogicEngine,rulesCache,valueSetCache);
                 }
             }
         }
@@ -209,9 +209,15 @@ public class DccValidator {
         return zonedDateTime;
     }
 
-    private void validateRules(GreenCertificateData greenCertificateData, VerificationResult verificationResult,
-                               List<ValidationStatusResponse.Result> results, AccessTokenConditions accessTokenConditions, byte[] kid) {
-        
+    public static void validateRules(GreenCertificateData greenCertificateData, 
+                                     VerificationResult verificationResult,
+                                     List<ValidationStatusResponse.Result> results, 
+                                     AccessTokenConditions accessTokenConditions, 
+                                     byte[] kid, 
+                                     CertLogicEngine certLogicEngine, 
+                                     RulesCache rulesCache, 
+                                     ValueSetCache valueSetCache)
+        {
         ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
 
         String countryOfArrival = accessTokenConditions.getCoa();
@@ -219,19 +225,19 @@ public class DccValidator {
         String certificateType = greenCertificateData.getGreenCertificate().getType().toString();
         List<Rule> rules = rulesCache.provideRules(countryOfArrival,greenCertificateData.getIssuingCountry())
                                      .stream()
-                                     .filter(t -> ((t.getRuleCertificateType().toString().toLowerCase() == certificateType.toLowerCase() || 
-                                                        t.getRuleCertificateType().toString() == "General"
+                                     .filter(t -> ((t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
+                                                        t.getRuleCertificateType().toString().equals("General")
                                                    ) 
-                                                    && (t.getValidFrom().isAfter(validationClock)|| t.getValidFrom().isEqual(validationClock))
+                                                    && (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.ACCEPTANCE)
                                                     && (t.getRegion() == null || t.getRegion().equals(regionOfArrival))
                                                   ||
                                                   (
-                                                    (t.getRuleCertificateType().toString().toLowerCase() == certificateType.toLowerCase() || 
-                                                        t.getRuleCertificateType().toString() == "General") 
-                                                    && (t.getValidFrom().isAfter(validationClock)|| t.getValidFrom().isEqual(validationClock))
+                                                    (t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
+                                                        t.getRuleCertificateType().toString().equals("General"))
+                                                    && (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.INVALIDATION
-                                                    && t.getCountryCode() == greenCertificateData.getIssuingCountry()
+                                                    && t.getCountryCode().equals(greenCertificateData.getIssuingCountry())
                                                   )
                                             )     
                                      .map(t -> t)
@@ -265,7 +271,7 @@ public class DccValidator {
                 ValidationStatusResponse.Result.ResultType resultType;
                 switch (validationResult.getResult()) {
                     case OPEN:
-                        resultType = ValidationStatusResponse.Result.ResultType.NOK;
+                        resultType = ValidationStatusResponse.Result.ResultType.CHK;
                         break;
                     case PASSED:
                         resultType = ValidationStatusResponse.Result.ResultType.OK;
@@ -297,7 +303,7 @@ public class DccValidator {
                             resultTypeIdentifier = ResultTypeIdentifier.DestinationAcceptance;
                         }
                     } 
-                    addResult(results, resultType, resultTypeIdentifier,validationResult.getRule().getIdentifier(), details.toString());
+                   addResult(results, resultType, resultTypeIdentifier,validationResult.getRule().getIdentifier(), details.toString());
                 }       
             }
         } 
@@ -411,7 +417,7 @@ public class DccValidator {
         return pcrTest;
     }
 
-    private void addResult(List<ValidationStatusResponse.Result> results, ValidationStatusResponse.Result.ResultType resultType,
+    private  static void addResult(List<ValidationStatusResponse.Result> results, ValidationStatusResponse.Result.ResultType resultType,
                 ResultTypeIdentifier type, String  identifier, String details) {
         ValidationStatusResponse.Result result = new ValidationStatusResponse.Result();
         result.setResult(resultType);
