@@ -95,7 +95,7 @@ class DccValidatorTest {
     @Test
     void testDecodeDccWrongPrefix() throws Exception {
         String dcc = "dccwrongprefix";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
     }
@@ -103,7 +103,7 @@ class DccValidatorTest {
     @Test
     void testDecodeDccWrongBase45() throws Exception {
         String dcc = "HC1:_???";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
     }
@@ -111,7 +111,7 @@ class DccValidatorTest {
     @Test
     void testDecodeDccWrongBaseCompression() throws Exception {
         String dcc = "HC1:Y69 VD82EEC8NWEO2";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
     }
@@ -119,7 +119,7 @@ class DccValidatorTest {
     @Test
     void testDecodeDccWrongCBor() throws Exception {
         String dcc = "HC1:NCF0YU0+PIKP68E%E52V5N0065LV0";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
 
@@ -128,7 +128,7 @@ class DccValidatorTest {
     @Test
     void testDecodeDccCborButNotCose() throws Exception {
         String dcc = "HC1:NCFEZP699.MPJ2BBQ5B95HB05S3$P0";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
     }
@@ -140,7 +140,7 @@ class DccValidatorTest {
                 "U6%TIYDDT36Z3GWT-O30VSLY2JFTH8CR9C:XIBEIVG395EV3EVCK09DT9C.XIM$JK7JCIIFVA.QO5VA81K0ECM8CXVDC8C 1JI" +
                 "7J+TN:VL/35D266W5HW62Z4/Z7$35AL6JINQ+MN/Q19QE8Q4A7E:7LYP3PQCFT442/BE IQGSNG%PY8W YPB2N2.6P5CR 5YO" +
                 "M0WP2YO.V9S8HQM5UF20OLC$D66KV8V7.R3ET/JH.%K2TLFPJ05E5DFYYR7RTS1U3Z4ZYNWKIX10A1VC4";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
         assertEquals(1,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
     }
@@ -154,7 +154,7 @@ class DccValidatorTest {
                 "TYJDK8W$WKF.VUV9L+VF3TY71NSFIM2F:47*J0JLV50M1WB*C";
         AccessTokenConditions accessTokenConditions = buildConditions();
         accessTokenConditions.setHash(certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)));
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure,true);
         assertEquals(2,results.size());
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
     }
@@ -168,7 +168,7 @@ class DccValidatorTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Cryptographic);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Cryptographic,true);
         for (ValidationStatusResponse.Result result : results) {
             assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
         }
@@ -186,7 +186,7 @@ class DccValidatorTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Full);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Full,true);
         for (ValidationStatusResponse.Result result : results) {
             System.out.println(result);
             assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());

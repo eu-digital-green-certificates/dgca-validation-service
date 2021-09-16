@@ -76,7 +76,7 @@ public class DccValidator {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
-    public List<ValidationStatusResponse.Result> validate(String dcc, AccessTokenConditions accessTokenConditions, AccessTokenType accessTokenType) {
+    public List<ValidationStatusResponse.Result> validate(String dcc, AccessTokenConditions accessTokenConditions, AccessTokenType accessTokenType,boolean ignoreExpire) {
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
         VerificationResult verificationResult = new VerificationResult();
         String dccPlain = prefixValidationService.decode(dcc,verificationResult);
@@ -121,7 +121,7 @@ public class DccValidator {
             return results;
         }
 
-        if(ZonedDateTime.now().isAfter(greenCertificateData.getExpirationTime()))
+        if(ZonedDateTime.now().isAfter(greenCertificateData.getExpirationTime())&&!ignoreExpire)
         {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ResultTypeIdentifier.TechnicalVerification,"EXPIRED","Certificate Expired.");
@@ -135,7 +135,7 @@ public class DccValidator {
             return results;
         }
 
-        if(Arrays.asList(Locale.getISOCountries()).contains(greenCertificateData.getIssuingCountry()))
+        if(!Arrays.asList(Locale.getISOCountries()).contains(greenCertificateData.getIssuingCountry()))
         {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ResultTypeIdentifier.TechnicalVerification,"UNKNOWNISSUERCOUNTRY","Issuer Country is unknown.");
