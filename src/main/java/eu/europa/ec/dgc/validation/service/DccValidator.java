@@ -218,6 +218,7 @@ public class DccValidator {
                                      RulesCache rulesCache, 
                                      ValueSetCache valueSetCache)
         {
+        log.debug("Start BusinessRule Evaluation");
         ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
 
         String countryOfArrival = accessTokenConditions.getCoa();
@@ -242,7 +243,7 @@ public class DccValidator {
                                             )     
                                      .map(t -> t)
                                      .collect(Collectors.toList());;
-
+        log.debug("Matching Rules: "+rules.size());
         if (rules!=null && rules.size()>0) {
             String kidBase64 = Base64.getEncoder().encodeToString(kid);
             Map<String, List<String>> valueSets = valueSetCache.provideValueSets();
@@ -267,6 +268,7 @@ public class DccValidator {
             }
             List<ValidationResult> ruleValidationResults = certLogicEngine.validate(certEngineType, greenCertificateData.getGreenCertificate().getSchemaVersion(),
                     rules, externalParameter, hcertJson);
+        
             for (ValidationResult validationResult : ruleValidationResults) {
                 ValidationStatusResponse.Result.ResultType resultType;
                 switch (validationResult.getResult()) {
