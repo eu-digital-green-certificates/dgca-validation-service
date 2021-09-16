@@ -36,8 +36,10 @@ import java.security.cert.X509Certificate;
 import java.time.*;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -118,6 +120,28 @@ public class DccValidator {
                     ResultTypeIdentifier.TechnicalVerification,"CBOR","can not decode cbor");
             return results;
         }
+
+        if(ZonedDateTime.now().isAfter(greenCertificateData.getExpirationTime()))
+        {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ResultTypeIdentifier.TechnicalVerification,"EXPIRED","Certificate Expired.");
+            return results;
+        }
+
+        if(ZonedDateTime.now().isBefore(greenCertificateData.getIssuedAt()))
+        {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ResultTypeIdentifier.TechnicalVerification,"NOTVALIDYET","Certificate not yet valid.");
+            return results;
+        }
+
+        if(Arrays.asList(Locale.getISOCountries()).contains(greenCertificateData.getIssuingCountry()))
+        {
+            addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+                    ResultTypeIdentifier.TechnicalVerification,"UNKNOWNISSUERCOUNTRY","Issuer Country is unknown.");
+            return results;
+        }
+
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                 ResultTypeIdentifier.TechnicalVerification, "STRUCTURE","OK");
         if (accessTokenType==AccessTokenType.Structure) {
