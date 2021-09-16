@@ -75,26 +75,28 @@ public class KeyStoreKeyProvider implements KeyProvider {
                     new KeyStore.PasswordProtection(keyStorePassword);
 
             for (String alias : getKeyNames(KeyType.All)){
-                KeyStore.PrivateKeyEntry privateKeyEntry =
-                        (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, keyPassword);
+                
+                KeyStore.Entry entry = keyStore.getEntry(alias, keyPassword);
 
-                if( privateKeyEntry == null)
-                  continue;
-
+                if(entry instanceof KeyStore.PrivateKeyEntry)
+                 {
+                    KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry) entry;
+                    PrivateKey privateKey = privateKeyEntry.getPrivateKey();
+                    privateKeys.put(alias, privateKey);
+                }
+                
                 X509Certificate cert = (X509Certificate)keyStore.getCertificate(alias);
-                PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-                certificates.put(alias, cert);
-                privateKeys.put(alias, privateKey);
+                certificates.put(alias, cert); 
                 String kid = certificateUtils.getCertKid((X509Certificate) cert);
                 kids.put(alias,kid);
                 kidToName.put(kid, alias);
 
                 if(cert.getSigAlgOID().contains("1.2.840.113549.1.1.1")) 
-                 algs.put(alias, "RS256");
+                algs.put(alias, "RS256");
                 if(cert.getSigAlgOID().contains("1.2.840.113549.1.1.10"))
-                 algs.put(alias, "PS256");
+                algs.put(alias, "PS256");
                 if(cert.getSigAlgOID().contains("1.2.840.10045.4.3.2"))
-                 algs.put(alias, "ES256"); 
+                algs.put(alias, "ES256"); 
             }  
         }
     }
