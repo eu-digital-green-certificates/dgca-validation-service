@@ -43,6 +43,6 @@ public class ValidationDevTestController {
             @Valid @RequestBody ValidationDevRequest validationDevRequest) {
         return ResponseEntity.ok(dccValidator.validate(validationDevRequest.getDcc()
                 ,validationDevRequest.getAccessTokenPayload().getConditions()
-                , AccessTokenType.getTokenForInt(validationDevRequest.getAccessTokenPayload().getType())));
+                , AccessTokenType.getTokenForInt(validationDevRequest.getAccessTokenPayload().getType()),false));
     }
 }

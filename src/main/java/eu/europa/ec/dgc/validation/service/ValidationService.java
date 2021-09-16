@@ -181,7 +181,7 @@ public class ValidationService {
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);
 
           
-            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
+            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()),false);
             resultToken = resultTokenBuilder.build(results,accessToken.getSub(),
                                                            dgcConfigProperties.getServiceUrl(), 
                                                            keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
