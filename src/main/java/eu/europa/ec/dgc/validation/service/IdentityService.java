@@ -31,7 +31,7 @@ public class IdentityService {
         identityResponse.setVerificationMethod(verificationMethods);
         for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
             VerificationMethod verificationMethod = new VerificationMethod();
-            verificationMethod.setId(identityId+"#"+keyName);
+            verificationMethod.setId(identityId+"/verificationMethod/JsonWebKey2020#"+keyName);
             verificationMethod.setController(identityId);
             verificationMethod.setType("JsonWebKey2020");
             Certificate certificate = keyProvider.receiveCertificate(keyName);
