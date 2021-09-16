@@ -1,14 +1,25 @@
 package eu.europa.ec.dgc.validation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dgca.verifier.app.decoder.base45.Base45Service;
 import dgca.verifier.app.decoder.base45.DefaultBase45Service;
+import dgca.verifier.app.decoder.cbor.GreenCertificateData;
+import dgca.verifier.app.decoder.model.GreenCertificate;
+import dgca.verifier.app.decoder.model.Person;
+import dgca.verifier.app.decoder.model.Vaccination;
+import dgca.verifier.app.decoder.model.VerificationResult;
 import dgca.verifier.app.engine.AffectedFieldsDataRetriever;
 import dgca.verifier.app.engine.CertLogicEngine;
 import dgca.verifier.app.engine.DefaultCertLogicEngine;
 import dgca.verifier.app.engine.DefaultJsonLogicValidator;
 import dgca.verifier.app.engine.JsonLogicValidator;
+import dgca.verifier.app.engine.Result;
+import dgca.verifier.app.engine.data.CertificateType;
+import dgca.verifier.app.engine.data.Rule;
+import dgca.verifier.app.engine.data.RuleCertificateType;
+import dgca.verifier.app.engine.data.Type;
 import dgca.verifier.app.engine.data.ValueSet;
 import eu.europa.ec.dgc.utils.CertificateUtils;
 import eu.europa.ec.dgc.validation.entity.BusinessRuleEntity;
@@ -16,8 +27,16 @@ import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
+import eu.europa.ec.dgc.validation.restapi.dto.ResultTypeIdentifier;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
+import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse.Result.ResultType;
+import eu.europa.ec.dgc.validation.service.Mocks.BusinessRulesCacheMock;
+import eu.europa.ec.dgc.validation.service.Mocks.ValueSetCacheMock;
+import eu.europa.ec.dgc.validation.service.impl.DgcgRulesCache;
+import eu.europa.ec.dgc.validation.service.impl.DgcgValueSetCache;
+import io.jsonwebtoken.lang.Assert;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,6 +47,7 @@ import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +57,7 @@ import java.util.Map;
 import liquibase.pro.packaged.C;
 import org.aspectj.lang.annotation.Before;
 import org.bouncycastle.jcajce.provider.digest.MD2;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,8 +86,8 @@ class DccValidatorTest {
         doReturn("").when(affectedFieldsDataRetriever).getAffectedFieldsData(any(), any(), any());
         JsonLogicValidator jsonLogicValidator = new DefaultJsonLogicValidator();
         certLogicEngine = new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
-        ValueSetCache valueSetCache = new ValueSetCache(objectMapper, valueSetService);
-        RulesCache rulesCache = new RulesCache(businessRuleService, objectMapper);
+        ValueSetCache valueSetCache = new DgcgValueSetCache(objectMapper, valueSetService);
+        RulesCache rulesCache = new DgcgRulesCache(businessRuleService, objectMapper);
         dccValidator = new DccValidator(signerInformationService, certLogicEngine, certificateUtils, valueSetCache, rulesCache);
         dccValidator.initMapper();
     }
@@ -171,6 +192,56 @@ class DccValidatorTest {
             assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
         }
         assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
+    }
+
+    @Test
+    void testBusinessRules()
+    {
+        VerificationResult result = new VerificationResult();
+        List<ValidationStatusResponse.Result> results = new ArrayList<>();
+        AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
+        accessTokenConditions.setCoa("DE");
+        accessTokenConditions.setRoa("");
+        accessTokenConditions.setValidationClock("2021-08-29T12:00:00+01:00");
+        accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
+        accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
+        Person p = new Person("WURST", "Wurst", "HANS", "Hans");
+
+        Vaccination v = new Vaccination("", "", "", "", 1, 2, "", "", "", "");
+
+        List<Vaccination> vacs = new ArrayList<>();
+        vacs.add(v);
+        GreenCertificate certificate = new GreenCertificate("1.0.0",   
+                                                        p, 
+                                                         "10-10-2020", 
+                                                         vacs, null, null);
+
+        GreenCertificateData data = new GreenCertificateData("DE", "{}", certificate, ZonedDateTime.now().minusDays(100), ZonedDateTime.now().plusDays(250));
+        List<Rule> rules = new ArrayList<>();
+        Rule rule = new Rule("VR-0002",
+                             Type.ACCEPTANCE, 
+                             "1.0.0",
+                             "1.0.0", 
+                             "CERTLOGIC", 
+                             "0.7.5", 
+                             RuleCertificateType.VACCINATION, 
+                             new HashMap<>(), 
+                             ZonedDateTime.now().minusDays(400), 
+                             ZonedDateTime.now().plusDays(500), 
+                             new ArrayList<>(), 
+                             new TextNode("{}"),
+                             "DE",
+                             null);
+        rules.add(rule);
+        Map<String,List<String>> valueSets = new HashMap<>();
+        
+        RulesCache rulesCache=new BusinessRulesCacheMock(rules);
+        ValueSetCache cache = new ValueSetCacheMock(valueSets);
+        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+
+        Assert.isTrue(results.size()==1);
+        Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
+        Assert.isTrue(results.get(0).getResult() == ResultType.CHK);
     }
 
     private void mockRules() throws IOException {
