@@ -41,7 +41,7 @@ import org.springframework.context.annotation.Profile;
 @Configuration
 @RequiredArgsConstructor
 @EnableFeignClients
-public class BusinessRulesRestClientConfig {
+public class RestClientConfig {
 
 
     /**

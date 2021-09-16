@@ -1,6 +1,8 @@
 dgc:
   businessRulesDownload:
-    endpoint: "https://dgca-businessrule-service.cfapps.eu10.hana.ondemand.com"
+    endpoint: "https://dgca-businessrule-service-eu-test.cfapps.eu10.hana.ondemand.com"
+  valueSetsDownload:
+    endpoint: "https://dgca-businessrule-service-eu-test.cfapps.eu10.hana.ondemand.com"
 
 
 

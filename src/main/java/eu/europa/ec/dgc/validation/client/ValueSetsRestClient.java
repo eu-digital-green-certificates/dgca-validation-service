@@ -20,7 +20,7 @@
 
 package eu.europa.ec.dgc.validation.client;
 
-import eu.europa.ec.dgc.validation.client.dto.RulesResponseDto;
+import eu.europa.ec.dgc.validation.client.dto.ValueSetResponseDto;
 import java.util.List;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.context.annotation.Profile;
@@ -31,27 +31,26 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 @Profile("pse")
 @FeignClient(
-    name = "business-download-client",
-    url = "${dgc.businessRulesDownload.endpoint}",
+    name = "valueset-download-client",
+    url = "${dgc.valueSetsDownload.endpoint}",
     configuration = RestClientConfig.class
 )
-public interface BusinessRulesRestClient {
+public interface ValueSetsRestClient {
     /**
-     * Gets the business rules index from the business rule service.
+     * Gets the value sets list from the business rule service.
      *
-     * @return List of business rule index
+     * @return List of trustListItems
      */
-    @GetMapping(value = "/rules", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<List<RulesResponseDto>> getBusinessRulesList();
+    @GetMapping(value = "/valuesets", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<List<ValueSetResponseDto>> getValueSetsList();
 
     /**
-     * Gets the raw data of a business rule from the business rule service.
+     * Gets the raw data of a value set from the business rule service.
      *
-     * @param country The country of the rule
-     * @param hash  The hash value of the rule
-     * @return Raw data of the rule
+     * @param hash The hash value of the value set.
+     * @return Raw value set data
      */
-    @GetMapping(value = "/rules/{country}/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<String> getBusinessRulesItem(@PathVariable("country") String country, @PathVariable("hash") String hash);
+    @GetMapping(value = "/valuesets/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<String> getValueSetData(@PathVariable("hash") String hash);
 }
 
