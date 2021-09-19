@@ -344,6 +344,7 @@ public class DccValidator {
                             resultTypeIdentifier = ResultTypeIdentifier.DestinationAcceptance;
                         }
                     } 
+                if(resultType ==  ResultType.NOK || resultType == ResultType.CHK)
                    addResult(results, resultType, resultTypeIdentifier,validationResult.getRule().getIdentifier(), details.toString());
                 }       
             }
