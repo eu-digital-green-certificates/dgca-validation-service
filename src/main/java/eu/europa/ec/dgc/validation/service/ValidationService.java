@@ -18,7 +18,9 @@ import eu.europa.ec.dgc.validation.service.impl.MemoryValidationStoreService;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwt;
+import io.jsonwebtoken.JwtException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
@@ -57,50 +59,53 @@ public class ValidationService {
 
     public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact)
     {
-        if (accessTokenCompact!=null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
-           String plainToken= accessTokenCompact.substring(TOKEN_PREFIX.length());
-           Jwt token = accessTokenParser.extractPayload(plainToken);
+            try
+            {    
+                if (accessTokenCompact!=null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
+                    String plainToken= accessTokenCompact.substring(TOKEN_PREFIX.length());
+                    
+                    Jwt token = accessTokenParser.extractPayload(plainToken);
 
-           String kid = (String)token.getHeader().get("kid");
+                    String kid = (String)token.getHeader().get("kid");
 
-           if(kid == null)
+                    if(kid == null)
+                        return null;
+
+                    String alg = (String)token.getHeader().get("alg");
+
+                    switch(alg)
+                    {
+                        case "RS256":{}
+                        break;
+                        case "ES256":{}
+                        break;
+                        case "PS256":{}
+                        break;
+                        default:
+                        return null;
+                    }
+
+                    Claims claims = (Claims)token.getBody();
+                
+                    if(claims.containsKey("exp") &&  claims.getExpiration().toInstant().getEpochSecond()<Instant.now().getEpochSecond())
+                        return null;
+                    
+                    if(claims.containsKey("iat") &&  claims.getIssuedAt().toInstant().getEpochSecond()>Instant.now().getEpochSecond())
+                        return null;
+
+                    if(claims.containsKey("aud") &&  !claims.getAudience().equals(audience))
+                        return null;
+
+                    if(claims.containsKey("sub") &&  !claims.getSubject().equals(subject))
+                        return null;
+
+                    return accessTokenParser.parseToken(plainToken, accessTokenKeyProvider.getPublicKey(kid));  
+                }
+            }
+            catch(JwtException ex)
+            {
                 return null;
-
-           String alg = (String)token.getHeader().get("alg");
-
-           switch(alg)
-           {
-               case "RS256":{}
-                break;
-               case "ES256":{}
-                break;
-               case "PS256":{}
-                break;
-               default:
-                return null;
-           }
-
-           Claims claims = (Claims)token.getBody();
-      
-           if(claims.containsKey("exp") &&  claims.getExpiration().toInstant().getEpochSecond()<Instant.now().getEpochSecond())
-             return null;
-           
-           if(claims.containsKey("iat") &&  claims.getIssuedAt().toInstant().getEpochSecond()>Instant.now().getEpochSecond())
-             return null;
-
-           if(claims.containsKey("aud") &&  !claims.getAudience().equals(audience))
-             return null;
-
-           if(claims.containsKey("sub") &&  !claims.getSubject().equals(subject))
-             return null;
-
-           try {
-            AccessTokenPayload accessToken = accessTokenParser.parseToken(plainToken, accessTokenKeyProvider.getPublicKey(kid)); 
-            return accessToken;
-           } catch (Exception e) {
-               return null;
-           }    
-        }
+            }
         return null;
     }
 
