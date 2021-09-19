@@ -255,6 +255,7 @@ public class DccValidator {
                                                    ) 
                                                     && (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.ACCEPTANCE)
+                                                    && t.getCountryCode().equals(countryOfArrival)
                                                     && (t.getRegion() == null || t.getRegion().equals(regionOfArrival))
                                                   ||
                                                   (
