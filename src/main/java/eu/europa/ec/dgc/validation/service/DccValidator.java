@@ -253,6 +253,7 @@ public class DccValidator {
                         rules = rules.stream()
                                      .peek(t->
                                      {
+                                        log.debug(String.format("Identifier: %s,Type: %s , Country: %s, CertType: %s", t.getIdentifier(),t.getType(),t.getCountryCode(),t.getRuleCertificateType()));
                                         log.debug("General :"+String.valueOf(t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
                                         t.getRuleCertificateType().toString().equals("General")));
                                         log.debug("Clock :"+String.valueOf( (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))));
