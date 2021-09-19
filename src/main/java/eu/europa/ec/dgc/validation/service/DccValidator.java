@@ -246,10 +246,23 @@ public class DccValidator {
         ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
 
         String countryOfArrival = accessTokenConditions.getCoa();
-        String regionOfArrival = accessTokenConditions.getRoa() == ""?null:accessTokenConditions.getRoa();
+        String regionOfArrival = accessTokenConditions.getRoa().isEmpty()?null:accessTokenConditions.getRoa();
         String certificateType = greenCertificateData.getGreenCertificate().getType().toString();
-        List<Rule> rules = rulesCache.provideRules(countryOfArrival,greenCertificateData.getIssuingCountry())
-                                     .stream()
+        List<Rule> rules = rulesCache.provideRules(countryOfArrival,greenCertificateData.getIssuingCountry());
+        log.debug("Found Rules: "+rules.size());
+                        rules = rules.stream()
+                                     .peek(t->
+                                     {
+                                        log.debug("General :"+String.valueOf(t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
+                                        t.getRuleCertificateType().toString().equals("General")));
+                                        log.debug("Clock :"+String.valueOf( (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))));
+                                        log.debug("Type :"+String.valueOf(t.getType() == dgca.verifier.app.engine.data.Type.ACCEPTANCE));
+                                        log.debug("Country :"+String.valueOf(t.getCountryCode().equals(countryOfArrival)));
+                                        log.debug("Region :"+String.valueOf((t.getRegion() == null || t.getRegion().equals(regionOfArrival))));
+                                        log.debug("InvalidType :"+String.valueOf(t.getType() == dgca.verifier.app.engine.data.Type.INVALIDATION));
+                                        log.debug("IssuerCountry :"+String.valueOf( t.getCountryCode().equals(greenCertificateData.getIssuingCountry())));
+                                     }
+                                     )
                                      .filter(t -> ((t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
                                                         t.getRuleCertificateType().toString().equals("General")
                                                    ) 
@@ -265,7 +278,7 @@ public class DccValidator {
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.INVALIDATION
                                                     && t.getCountryCode().equals(greenCertificateData.getIssuingCountry())
                                                   )
-                                            )     
+                                            )
                                      .map(t -> t)
                                      .collect(Collectors.toList());;
         log.debug("Matching Rules: "+rules.size());
