@@ -269,15 +269,15 @@ public class DccValidator {
                                                    ) 
                                                     && (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.ACCEPTANCE)
-                                                    && t.getCountryCode().equals(countryOfArrival)
-                                                    && (t.getRegion() == null || t.getRegion().equals(regionOfArrival))
+                                                    && t.getCountryCode().toLowerCase().equals(countryOfArrival.toLowerCase())
+                                                    && (t.getRegion() == null || t.getRegion().toLowerCase().equals(regionOfArrival.toLowerCase()))
                                                   ||
                                                   (
                                                     (t.getRuleCertificateType().toString().toLowerCase().equals(certificateType.toLowerCase()) || 
                                                         t.getRuleCertificateType().toString().equals("General"))
                                                     && (t.getValidFrom().isBefore(validationClock)|| t.getValidFrom().isEqual(validationClock))
                                                     && t.getType() == dgca.verifier.app.engine.data.Type.INVALIDATION
-                                                    && t.getCountryCode().equals(greenCertificateData.getIssuingCountry())
+                                                    && t.getCountryCode().toLowerCase().equals(greenCertificateData.getIssuingCountry().toLowerCase())
                                                   )
                                             )
                                      .map(t -> t)
