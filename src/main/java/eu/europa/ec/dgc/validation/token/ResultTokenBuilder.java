@@ -45,6 +45,9 @@ public class ResultTokenBuilder {
                         String kid) {
 
         String result = evaluateResult(results);
+        
+        results.removeIf(c->c.getResult() == ResultType.OK);
+
         String confirmation =  builder2.setHeaderParam("kid",kid)
                                       .setId(UUID.randomUUID().toString())
                                       .setHeaderParam("alg", "ES256")

@@ -142,6 +142,8 @@ public class DccValidator {
             return results;
         }
 
+        addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                ResultTypeIdentifier.TechnicalVerification, "STRUCTURE","OK");
         if (accessTokenType==AccessTokenType.Structure) {
             if(accessTokenConditions==null)
                 throw new DccException("Validation Conditions missing",HttpStatus.SC_BAD_REQUEST);
@@ -154,6 +156,9 @@ public class DccValidator {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                                     ResultTypeIdentifier.TechnicalVerification,"HASH", "dcc hash does not match");
                     }
+                    else
+                      addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                         ResultTypeIdentifier.TechnicalVerification,"HASH", "OK");
                 } catch (NoSuchAlgorithmException e) {
                     throw new DccException("hash calculation",e);
                 }
@@ -339,7 +344,6 @@ public class DccValidator {
                             resultTypeIdentifier = ResultTypeIdentifier.DestinationAcceptance;
                         }
                     } 
-                if(resultType ==  ResultType.NOK || resultType == ResultType.CHK)
                    addResult(results, resultType, resultTypeIdentifier,validationResult.getRule().getIdentifier(), details.toString());
                 }       
             }
@@ -370,7 +374,10 @@ public class DccValidator {
             if (!signValidated) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                         ResultTypeIdentifier.TechnicalVerification,"SIGNATURE", "signature invalid");
-            } 
+            } else {
+                addResult(results, ValidationStatusResponse.Result.ResultType.OK,
+                         ResultTypeIdentifier.TechnicalVerification,"SIGNATURE", "signature valid");
+            }
         } else {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ResultTypeIdentifier.TechnicalVerification,"KID", "unknown dcc signing kid");
