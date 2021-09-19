@@ -195,7 +195,7 @@ class DccValidatorTest {
     }
 
     @Test
-    void testBusinessRules()
+    void testBusinessRuleExist()
     {
         VerificationResult result = new VerificationResult();
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
@@ -242,6 +242,54 @@ class DccValidatorTest {
         Assert.isTrue(results.size()==1);
         Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
         Assert.isTrue(results.get(0).getResult() == ResultType.CHK);
+    }
+
+    @Test
+    void testBusinessRuleDontExist()
+    {
+        VerificationResult result = new VerificationResult();
+        List<ValidationStatusResponse.Result> results = new ArrayList<>();
+        AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
+        accessTokenConditions.setCoa("NL");
+        accessTokenConditions.setRoa("");
+        accessTokenConditions.setValidationClock("2021-08-29T12:00:00+01:00");
+        accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
+        accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
+        Person p = new Person("WURST", "Wurst", "HANS", "Hans");
+
+        Vaccination v = new Vaccination("", "", "", "", 1, 2, "", "", "", "");
+
+        List<Vaccination> vacs = new ArrayList<>();
+        vacs.add(v);
+        GreenCertificate certificate = new GreenCertificate("1.0.0",   
+                                                        p, 
+                                                         "10-10-2020", 
+                                                         vacs, null, null);
+
+        GreenCertificateData data = new GreenCertificateData("DE", "{}", certificate, ZonedDateTime.now().minusDays(100), ZonedDateTime.now().plusDays(250));
+        List<Rule> rules = new ArrayList<>();
+        Rule rule = new Rule("VR-0002",
+                             Type.ACCEPTANCE, 
+                             "1.0.0",
+                             "1.0.0", 
+                             "CERTLOGIC", 
+                             "0.7.5", 
+                             RuleCertificateType.VACCINATION, 
+                             new HashMap<>(), 
+                             ZonedDateTime.now().minusDays(400), 
+                             ZonedDateTime.now().plusDays(500), 
+                             new ArrayList<>(), 
+                             new TextNode("{}"),
+                             "DE",
+                             null);
+        rules.add(rule);
+        Map<String,List<String>> valueSets = new HashMap<>();
+        
+        RulesCache rulesCache=new BusinessRulesCacheMock(rules);
+        ValueSetCache cache = new ValueSetCacheMock(valueSets);
+        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+
+        Assert.isTrue(results.size()==0);
     }
 
     private void mockRules() throws IOException {
