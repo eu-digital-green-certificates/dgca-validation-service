@@ -185,12 +185,12 @@ public class ValidationService {
             resultToken = resultTokenBuilder.build(results,accessToken.getSub(),
                                                            dgcConfigProperties.getServiceUrl(), 
                                                            keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                                                           dccValidationRequest.getKid());
+                                                           keyProvider.getKid(keyProvider.getActiveSignKey()));
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
         } else {
-            resultToken  = resultTokenBuilder.build(null,accessToken.getSub(),dgcConfigProperties.getServiceUrl(),keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());;
+            resultToken  = resultTokenBuilder.build(null,accessToken.getSub(),dgcConfigProperties.getServiceUrl(),keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),keyProvider.getKid(keyProvider.getActiveSignKey()));
         }
         return resultToken;
     }
