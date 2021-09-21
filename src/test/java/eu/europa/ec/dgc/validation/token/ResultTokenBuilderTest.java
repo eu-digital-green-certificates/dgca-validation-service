@@ -21,94 +21,94 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ResultTokenBuilderTest {
-    
-    @Test
-    void testTechnicalNOK()  {
-       ValidationStatusResponse result = new ValidationStatusResponse();
 
-       ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
-       r1.setType(ResultTypeIdentifier.TechnicalVerification);
-       r1.setResult(ResultType.NOK);
-       ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
-       r2.setType(ResultTypeIdentifier.TravellerAcceptance);
-       r2.setResult(ResultType.CHK);
-       result.setResults(new ArrayList<>());
-       result.getResults().add(r1);
-       result.getResults().add(r2);
-       Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults())=="NOK");
+    @Test
+    void testTechnicalNOK() {
+        ValidationStatusResponse result = new ValidationStatusResponse();
+
+        ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
+        r1.setType(ResultTypeIdentifier.TechnicalVerification);
+        r1.setResult(ResultType.NOK);
+        ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
+        r2.setType(ResultTypeIdentifier.TravellerAcceptance);
+        r2.setResult(ResultType.CHK);
+        result.setResults(new ArrayList<>());
+        result.getResults().add(r1);
+        result.getResults().add(r2);
+        Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults()) == "NOK");
     }
 
     @Test
-    void testTechnicalOKButFailedRule()  {
-       ValidationStatusResponse result = new ValidationStatusResponse();
+    void testTechnicalOKButFailedRule() {
+        ValidationStatusResponse result = new ValidationStatusResponse();
 
-       ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
-       r1.setType(ResultTypeIdentifier.TechnicalVerification);
-       r1.setResult(ResultType.OK);
-       ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
-       r2.setType(ResultTypeIdentifier.TravellerAcceptance);
-       r2.setResult(ResultType.NOK);
-       result.setResults(new ArrayList<>());
-       result.getResults().add(r1);
-       result.getResults().add(r2);
-       Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults())=="CHK");
+        ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
+        r1.setType(ResultTypeIdentifier.TechnicalVerification);
+        r1.setResult(ResultType.OK);
+        ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
+        r2.setType(ResultTypeIdentifier.TravellerAcceptance);
+        r2.setResult(ResultType.NOK);
+        result.setResults(new ArrayList<>());
+        result.getResults().add(r1);
+        result.getResults().add(r2);
+        Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults()) == "CHK");
     }
 
     @Test
-    void testTechnicalOKButFailedInvalidation()  {
-       ValidationStatusResponse result = new ValidationStatusResponse();
+    void testTechnicalOKButFailedInvalidation() {
+        ValidationStatusResponse result = new ValidationStatusResponse();
 
-       ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
-       r1.setType(ResultTypeIdentifier.TechnicalVerification);
-       r1.setResult(ResultType.OK);
-       ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
-       r2.setType(ResultTypeIdentifier.IssuerInvalidation);
-       r2.setResult(ResultType.NOK);
-       result.setResults(new ArrayList<>());
-       result.getResults().add(r1);
-       result.getResults().add(r2);
-       Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults())=="NOK");
+        ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
+        r1.setType(ResultTypeIdentifier.TechnicalVerification);
+        r1.setResult(ResultType.OK);
+        ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
+        r2.setType(ResultTypeIdentifier.IssuerInvalidation);
+        r2.setResult(ResultType.NOK);
+        result.setResults(new ArrayList<>());
+        result.getResults().add(r1);
+        result.getResults().add(r2);
+        Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults()) == "NOK");
     }
 
     @Test
-    void testTechnicalOKButFailedInvalidation2()  {
-       ValidationStatusResponse result = new ValidationStatusResponse();
+    void testTechnicalOKButFailedInvalidation2() {
+        ValidationStatusResponse result = new ValidationStatusResponse();
 
-       ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
-       r1.setType(ResultTypeIdentifier.TechnicalVerification);
-       r1.setResult(ResultType.OK);
-       ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
-       r2.setType(ResultTypeIdentifier.IssuerInvalidation);
-       r2.setResult(ResultType.NOK);
+        ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
+        r1.setType(ResultTypeIdentifier.TechnicalVerification);
+        r1.setResult(ResultType.OK);
+        ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
+        r2.setType(ResultTypeIdentifier.IssuerInvalidation);
+        r2.setResult(ResultType.NOK);
 
-       ValidationStatusResponse.Result r3 = new ValidationStatusResponse.Result();
-       r3.setType(ResultTypeIdentifier.DestinationAcceptance);
-       r3.setResult(ResultType.CHK);
-       result.setResults(new ArrayList<>());
-       result.getResults().add(r1);
-       result.getResults().add(r2);
-       result.getResults().add(r3);
-       Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults())=="NOK");
+        ValidationStatusResponse.Result r3 = new ValidationStatusResponse.Result();
+        r3.setType(ResultTypeIdentifier.DestinationAcceptance);
+        r3.setResult(ResultType.CHK);
+        result.setResults(new ArrayList<>());
+        result.getResults().add(r1);
+        result.getResults().add(r2);
+        result.getResults().add(r3);
+        Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults()) == "NOK");
     }
 
     @Test
-    void testTechnicalOKButRuleMustCheck()  {
-       ValidationStatusResponse result = new ValidationStatusResponse();
+    void testTechnicalOKButRuleMustCheck() {
+        ValidationStatusResponse result = new ValidationStatusResponse();
 
-       ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
-       r1.setType(ResultTypeIdentifier.TechnicalVerification);
-       r1.setResult(ResultType.OK);
-       ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
-       r2.setType(ResultTypeIdentifier.IssuerInvalidation);
-       r2.setResult(ResultType.OK);
+        ValidationStatusResponse.Result r1 = new ValidationStatusResponse.Result();
+        r1.setType(ResultTypeIdentifier.TechnicalVerification);
+        r1.setResult(ResultType.OK);
+        ValidationStatusResponse.Result r2 = new ValidationStatusResponse.Result();
+        r2.setType(ResultTypeIdentifier.IssuerInvalidation);
+        r2.setResult(ResultType.OK);
 
-       ValidationStatusResponse.Result r3 = new ValidationStatusResponse.Result();
-       r3.setType(ResultTypeIdentifier.DestinationAcceptance);
-       r3.setResult(ResultType.CHK);
-       result.setResults(new ArrayList<>());
-       result.getResults().add(r1);
-       result.getResults().add(r2);
-       result.getResults().add(r3);
-       Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults())=="CHK");
+        ValidationStatusResponse.Result r3 = new ValidationStatusResponse.Result();
+        r3.setType(ResultTypeIdentifier.DestinationAcceptance);
+        r3.setResult(ResultType.CHK);
+        result.setResults(new ArrayList<>());
+        result.getResults().add(r1);
+        result.getResults().add(r2);
+        result.getResults().add(r3);
+        Assert.isTrue(ResultTokenBuilder.evaluateResult(result.getResults()) == "CHK");
     }
 }

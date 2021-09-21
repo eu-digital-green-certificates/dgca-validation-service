@@ -21,7 +21,7 @@ public class ValidationInitRequest {
      * Optional callback URL.
      */
     private String callback;
-    
+
     @NotNull
     private String nonce;
 }

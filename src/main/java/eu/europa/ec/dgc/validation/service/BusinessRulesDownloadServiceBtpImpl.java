@@ -56,7 +56,7 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
     @Override
     @Scheduled(fixedDelayString = "${dgc.businessRulesDownload.timeInterval}")
     @SchedulerLock(name = "GatewayDataDownloadService_downloadBusinessRules", lockAtLeastFor = "PT0S",
-            lockAtMostFor = "${dgc.businessRulesDownload.lockLimit}")
+        lockAtMostFor = "${dgc.businessRulesDownload.lockLimit}")
     public void downloadBusinessRules() {
         try {
             initializeLogging();
@@ -76,7 +76,7 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
                 businessRuleService.updateBusinessRules(ruleItems);
             } else {
                 log.warn("The download of the business rules seems to fail, as the download connector "
-                        + "returns an empty list. No data will be changed.");
+                    + "returns an empty list. No data will be changed.");
             }
 
             log.info("Business rules download finished.");
@@ -94,7 +94,8 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
         try {
             HttpResponse response = httpClient.execute(RequestBuilder.get(DCCG_COUNTRY_LIST_ENDPOINT).build());
             countryList = new ArrayList<>(gson().fromJson(toJsonString(response.getEntity()),
-                    new TypeToken<List<String>>() {}.getType()));
+                new TypeToken<List<String>>() {
+                }.getType()));
         } catch (IOException e) {
             log.error("Could not fetch country list from gateway: {}", e.getMessage(), e);
         }
@@ -114,8 +115,8 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
                 return ZonedDateTime.parse(in.nextString());
             }
         })
-                .enableComplexMapKeySerialization()
-                .create();
+            .enableComplexMapKeySerialization()
+            .create();
     }
 
     private Gson gsonForValidationRule() {
@@ -130,10 +131,10 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
                 return ZonedDateTime.parse(in.nextString());
             }
         })
-                .registerTypeAdapter(JsonNode.class, new JsonNodeDeserializer())
-                .setFieldNamingStrategy(FieldNamingPolicy.UPPER_CAMEL_CASE)
-                .enableComplexMapKeySerialization()
-                .create();
+            .registerTypeAdapter(JsonNode.class, new JsonNodeDeserializer())
+            .setFieldNamingStrategy(FieldNamingPolicy.UPPER_CAMEL_CASE)
+            .enableComplexMapKeySerialization()
+            .create();
     }
 
     private String toJsonString(HttpEntity entity) throws IOException {
@@ -150,14 +151,15 @@ public class BusinessRulesDownloadServiceBtpImpl implements BusinessRulesDownloa
             log.debug("Fetching rules for country '{}'...", countryCode);
             try {
                 HttpResponse response = httpClient
-                        .execute(RequestBuilder.get(DCCG_BUSINESS_RULES_ENDPOINT + "/" + countryCode).build());
+                    .execute(RequestBuilder.get(DCCG_BUSINESS_RULES_ENDPOINT + "/" + countryCode).build());
                 Map<String, ValidationRuleDto[]> fetchedForCountry = gson().fromJson(toJsonString(response.getEntity()),
-                        new TypeToken<Map<String, ValidationRuleDto[]>>() {}.getType());
+                    new TypeToken<Map<String, ValidationRuleDto[]>>() {
+                    }.getType());
 
                 log.debug("Fetched {} rule(s) for country '{}'. Parsing now...", fetchedForCountry.values().size(),
-                        countryCode);
+                    countryCode);
                 allRules.addAll(fetchedForCountry.values().stream().flatMap(Arrays::stream).map(this::mapRule)
-                        .filter(Objects::nonNull).collect(Collectors.toList()));
+                    .filter(Objects::nonNull).collect(Collectors.toList()));
             } catch (IOException | JsonSyntaxException e) {
                 log.warn("Could not fetch rules for country '{}': {}", countryCode, e.getMessage(), e);
             }

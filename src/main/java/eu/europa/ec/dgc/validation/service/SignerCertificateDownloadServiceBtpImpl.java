@@ -104,11 +104,12 @@ public class SignerCertificateDownloadServiceBtpImpl implements SignerCertificat
             log.debug("DSC Certificate download started.");
             HttpResponse response = httpClient.execute(RequestBuilder.get(DGCG_TRUST_LIST_CSCA_ENDPOINT).build());
             List<TrustListItemDto> trustListItems = gson().fromJson(toJsonString(response.getEntity()),
-                new TypeToken<List<TrustListItemDto>>() {}.getType());
+                new TypeToken<List<TrustListItemDto>>() {
+                }.getType());
 
             listOfCsca = trustListItems.stream().map(this::getCertificateFromTrustListItem)
                 .filter(Objects::nonNull).collect(Collectors.toList());
-            log.debug("Downloaded "+listOfCsca.size()+" DSCs");
+            log.debug("Downloaded " + listOfCsca.size() + " DSCs");
         } catch (IOException e) {
             log.error("Fetching signer information from gateway failed: {}", e.getMessage(), e);
         }
@@ -123,12 +124,13 @@ public class SignerCertificateDownloadServiceBtpImpl implements SignerCertificat
             log.debug("DSC Certificate download started.");
             HttpResponse response = httpClient.execute(RequestBuilder.get(DGCG_TRUST_LIST_DSC_ENDPOINT).build());
             List<TrustListItemDto> trustListItems = gson().fromJson(toJsonString(response.getEntity()),
-                new TypeToken<List<TrustListItemDto>>() {}.getType());
+                new TypeToken<List<TrustListItemDto>>() {
+                }.getType());
 
             listOfDsc = trustListItems.stream().filter(dsc -> cscas.stream().anyMatch(
                 ca -> trustListItemSignedByCa(dsc, ca))).map(this::map).filter(Objects::nonNull)
                 .collect(Collectors.toList());
-            log.debug("Downloaded "+listOfDsc.size()+" DSCs");
+            log.debug("Downloaded " + listOfDsc.size() + " DSCs");
         } catch (IOException e) {
             log.error("Fetching signer information from gateway failed: {}", e.getMessage(), e);
         }

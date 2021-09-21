@@ -95,42 +95,42 @@ class DccValidatorTest {
     @Test
     void testDecodeDccWrongPrefix() throws Exception {
         String dcc = "dccwrongprefix";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
     }
 
     @Test
     void testDecodeDccWrongBase45() throws Exception {
         String dcc = "HC1:_???";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
     }
 
     @Test
     void testDecodeDccWrongBaseCompression() throws Exception {
         String dcc = "HC1:Y69 VD82EEC8NWEO2";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
     }
 
     @Test
     void testDecodeDccWrongCBor() throws Exception {
         String dcc = "HC1:NCF0YU0+PIKP68E%E52V5N0065LV0";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
 
     }
 
     @Test
     void testDecodeDccCborButNotCose() throws Exception {
         String dcc = "HC1:NCFEZP699.MPJ2BBQ5B95HB05S3$P0";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
     }
 
     @Test
@@ -140,9 +140,9 @@ class DccValidatorTest {
                 "U6%TIYDDT36Z3GWT-O30VSLY2JFTH8CR9C:XIBEIVG395EV3EVCK09DT9C.XIM$JK7JCIIFVA.QO5VA81K0ECM8CXVDC8C 1JI" +
                 "7J+TN:VL/35D266W5HW62Z4/Z7$35AL6JINQ+MN/Q19QE8Q4A7E:7LYP3PQCFT442/BE IQGSNG%PY8W YPB2N2.6P5CR 5YO" +
                 "M0WP2YO.V9S8HQM5UF20OLC$D66KV8V7.R3ET/JH.%K2TLFPJ05E5DFYYR7RTS1U3Z4ZYNWKIX10A1VC4";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure,true);
-        assertEquals(1,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.NOK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Structure, true);
+        assertEquals(1, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.NOK, results.get(0).getResult());
     }
 
     @Test
@@ -154,9 +154,9 @@ class DccValidatorTest {
                 "TYJDK8W$WKF.VUV9L+VF3TY71NSFIM2F:47*J0JLV50M1WB*C";
         AccessTokenConditions accessTokenConditions = buildConditions();
         accessTokenConditions.setHash(certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8)));
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure,true);
-        assertEquals(2,results.size());
-        assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessTokenConditions, AccessTokenType.Structure, true);
+        assertEquals(2, results.size());
+        assertEquals(ValidationStatusResponse.Result.ResultType.OK, results.get(0).getResult());
     }
 
     @Test
@@ -168,11 +168,11 @@ class DccValidatorTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Cryptographic,true);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Cryptographic, true);
         for (ValidationStatusResponse.Result result : results) {
-            assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
+            assertEquals(ValidationStatusResponse.Result.ResultType.OK, result.getResult());
         }
-        assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
+        assertEquals(ValidationStatusResponse.Result.ResultType.OK, results.get(0).getResult());
     }
 
     @Test
@@ -186,17 +186,16 @@ class DccValidatorTest {
                 "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
-        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Full,true);
+        List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, buildConditions(), AccessTokenType.Full, true);
         for (ValidationStatusResponse.Result result : results) {
             System.out.println(result);
-            assertEquals(ValidationStatusResponse.Result.ResultType.OK,result.getResult());
+            assertEquals(ValidationStatusResponse.Result.ResultType.OK, result.getResult());
         }
-        assertEquals(ValidationStatusResponse.Result.ResultType.OK,results.get(0).getResult());
+        assertEquals(ValidationStatusResponse.Result.ResultType.OK, results.get(0).getResult());
     }
 
     @Test
-    void testBusinessRuleExist()
-    {
+    void testBusinessRuleExist() {
         VerificationResult result = new VerificationResult();
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
@@ -211,42 +210,41 @@ class DccValidatorTest {
 
         List<Vaccination> vacs = new ArrayList<>();
         vacs.add(v);
-        GreenCertificate certificate = new GreenCertificate("1.0.0",   
-                                                        p, 
-                                                         "10-10-2020", 
-                                                         vacs, null, null);
+        GreenCertificate certificate = new GreenCertificate("1.0.0",
+                p,
+                "10-10-2020",
+                vacs, null, null);
 
         GreenCertificateData data = new GreenCertificateData("DE", "{}", certificate, ZonedDateTime.now().minusDays(100), ZonedDateTime.now().plusDays(250));
         List<Rule> rules = new ArrayList<>();
         Rule rule = new Rule("VR-0002",
-                             Type.ACCEPTANCE, 
-                             "1.0.0",
-                             "1.0.0", 
-                             "CERTLOGIC", 
-                             "0.7.5", 
-                             RuleCertificateType.VACCINATION, 
-                             new HashMap<>(), 
-                             ZonedDateTime.now().minusDays(400), 
-                             ZonedDateTime.now().plusDays(500), 
-                             new ArrayList<>(), 
-                             new TextNode("{}"),
-                             "DE",
-                             null);
+                Type.ACCEPTANCE,
+                "1.0.0",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.now().minusDays(400),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                new TextNode("{}"),
+                "DE",
+                null);
         rules.add(rule);
-        Map<String,List<String>> valueSets = new HashMap<>();
-        
-        RulesCache rulesCache=new BusinessRulesCacheMock(rules);
+        Map<String, List<String>> valueSets = new HashMap<>();
+
+        RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
         DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
 
-        Assert.isTrue(results.size()==1);
+        Assert.isTrue(results.size() == 1);
         Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
         Assert.isTrue(results.get(0).getResult() == ResultType.CHK);
     }
 
     @Test
-    void testBusinessRuleDontExist()
-    {
+    void testBusinessRuleDontExist() {
         VerificationResult result = new VerificationResult();
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
@@ -261,40 +259,40 @@ class DccValidatorTest {
 
         List<Vaccination> vacs = new ArrayList<>();
         vacs.add(v);
-        GreenCertificate certificate = new GreenCertificate("1.0.0",   
-                                                        p, 
-                                                         "10-10-2020", 
-                                                         vacs, null, null);
+        GreenCertificate certificate = new GreenCertificate("1.0.0",
+                p,
+                "10-10-2020",
+                vacs, null, null);
 
         GreenCertificateData data = new GreenCertificateData("DE", "{}", certificate, ZonedDateTime.now().minusDays(100), ZonedDateTime.now().plusDays(250));
         List<Rule> rules = new ArrayList<>();
         Rule rule = new Rule("VR-0002",
-                             Type.ACCEPTANCE, 
-                             "1.0.0",
-                             "1.0.0", 
-                             "CERTLOGIC", 
-                             "0.7.5", 
-                             RuleCertificateType.VACCINATION, 
-                             new HashMap<>(), 
-                             ZonedDateTime.now().minusDays(400), 
-                             ZonedDateTime.now().plusDays(500), 
-                             new ArrayList<>(), 
-                             new TextNode("{}"),
-                             "DE",
-                             null);
+                Type.ACCEPTANCE,
+                "1.0.0",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.now().minusDays(400),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                new TextNode("{}"),
+                "DE",
+                null);
         rules.add(rule);
-        Map<String,List<String>> valueSets = new HashMap<>();
-        
-        RulesCache rulesCache=new BusinessRulesCacheMock(rules);
+        Map<String, List<String>> valueSets = new HashMap<>();
+
+        RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
         DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
 
-        Assert.isTrue(results.size()==0);
+        Assert.isTrue(results.size() == 0);
     }
 
     private void mockRules() throws IOException {
         List<BusinessRuleListItemDto> ruleListItemDtos = new ArrayList<>();
-        BusinessRuleListItemDto businessRuleListItemDto = new BusinessRuleListItemDto("junit","1.0.0","DE","junit");
+        BusinessRuleListItemDto businessRuleListItemDto = new BusinessRuleListItemDto("junit", "1.0.0", "DE", "junit");
         ruleListItemDtos.add(businessRuleListItemDto);
         BusinessRuleEntity businessRuleEntity = new BusinessRuleEntity();
         businessRuleEntity.setHash("junit");
@@ -302,8 +300,8 @@ class DccValidatorTest {
         businessRuleEntity.setIdentifier("junit");
         businessRuleEntity.setVersion("1.0.0");
         businessRuleEntity.setRawData(Files.readString(Path.of("src/test/resources/testrule.json")));
-        doReturn(ruleListItemDtos).when(businessRuleService).getBusinessRulesListForCountry(anyString(),anyString());
-        doReturn(businessRuleEntity).when(businessRuleService).getBusinessRuleByCountryAndHash(anyString(),anyString());
+        doReturn(ruleListItemDtos).when(businessRuleService).getBusinessRulesListForCountry(anyString(), anyString());
+        doReturn(businessRuleEntity).when(businessRuleService).getBusinessRuleByCountryAndHash(anyString(), anyString());
     }
 
     private void mockValueSets() throws IOException {
@@ -311,8 +309,8 @@ class DccValidatorTest {
         List<ValueSetListItemDto> valueSetListItemDtos = new ArrayList<>();
         for (File valueSetFile : valueSetDir.listFiles()) {
             if (!"valuesets.json".equals(valueSetFile.getName())) {
-                String id = valueSetFile.getName().substring(0,valueSetFile.getName().lastIndexOf('.'));
-                ValueSetListItemDto valueSetListItemDto = new ValueSetListItemDto(id,id);
+                String id = valueSetFile.getName().substring(0, valueSetFile.getName().lastIndexOf('.'));
+                ValueSetListItemDto valueSetListItemDto = new ValueSetListItemDto(id, id);
                 valueSetListItemDtos.add(valueSetListItemDto);
                 ValueSetEntity valueSetEntity = new ValueSetEntity();
                 valueSetEntity.setId(id);
@@ -357,7 +355,7 @@ class DccValidatorTest {
         accessTokenConditions.setCod("DE");
         accessTokenConditions.setRoa("AW");
         accessTokenConditions.setRod("BW");
-        accessTokenConditions.setType(new String[] {"v","t"});
+        accessTokenConditions.setType(new String[]{"v", "t"});
         accessTokenConditions.setValidationClock("2021-08-29T12:00:00+01:00");
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");

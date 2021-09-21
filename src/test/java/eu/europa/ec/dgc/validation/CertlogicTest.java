@@ -14,6 +14,7 @@ import dgca.verifier.app.engine.data.ExternalParameter;
 import dgca.verifier.app.engine.data.Rule;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemote;
 import dgca.verifier.app.engine.data.source.remote.rules.RuleRemoteMapperKt;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import static eu.ehn.dcc.certlogic.CertlogicKt.evaluate;
@@ -29,8 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
-class CertlogicTest
-{
+class CertlogicTest {
     private String STANDARD_VERSION = "1.0.0";
     private ObjectMapper objectMapper = new ObjectMapper();
 

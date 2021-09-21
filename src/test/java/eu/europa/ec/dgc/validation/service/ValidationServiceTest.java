@@ -2,7 +2,7 @@ package eu.europa.ec.dgc.validation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
-import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256AesCBC;
+import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256AesCbc;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
@@ -14,6 +14,7 @@ import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.token.AccessTokenBuilder;
 import io.jsonwebtoken.Jwt;
 import io.jsonwebtoken.Jwts;
+
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -64,7 +65,7 @@ public class ValidationServiceTest {
 
     @Test
     void validateDcc() throws Exception {
-        byte [] iv = new byte[]{0,0,1,5,1,0,0,0,0,0,0,0,0,0,0,0};
+        byte[] iv = new byte[]{0, 0, 1, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
         keyPairGen.initialize(256);
         KeyPair keyPair = keyPairGen.generateKeyPair();
@@ -73,7 +74,7 @@ public class ValidationServiceTest {
         validationInitRequest.setKeyType("EC");
         validationInitRequest.setPubKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         validationInitRequest.setNonce(Base64.getEncoder().encodeToString(iv));
-        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest,"junit");
+        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest, "junit");
         assertNotNull(initResponse);
         System.out.println("init request");
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(validationInitRequest));
@@ -90,8 +91,8 @@ public class ValidationServiceTest {
                 "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
                 "I*GS8%LXKBJW8:G6O5";
 
-        byte[] data=encodeDcc(dcc, dccValidationRequest,iv);
-        String dccSign = signDcc(data,keyPair.getPrivate());
+        byte[] data = encodeDcc(dcc, dccValidationRequest, iv);
+        String dccSign = signDcc(data, keyPair.getPrivate());
         dccValidationRequest.setSig(dccSign);
         dccValidationRequest.setSigAlg(DccSign.SIG_ALG);
 
@@ -100,9 +101,9 @@ public class ValidationServiceTest {
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
         AccessTokenPayload accessTokenPayload = createAccessTocken();
-        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY),"kid");
+        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY), "kid");
 
-        System.out.println("jwt: "+accessToken);
+        System.out.println("jwt: " + accessToken);
 
         String resultToken = validationService.validate(dccValidationRequest, accessTokenPayload);
 
@@ -130,13 +131,13 @@ public class ValidationServiceTest {
         return kf.generatePrivate(spec);
     }
 
-    private byte[] encodeDcc(String dcc, DccValidationRequest dccValidationRequest,byte[] iv) {
+    private byte[] encodeDcc(String dcc, DccValidationRequest dccValidationRequest, byte[] iv) {
         EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                                    keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0]).getPublicKey(), 
-                                    RsaOaepWithSha256AesCBC.ENC_SCHEMA,iv);
+                keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0]).getPublicKey(),
+                RsaOaepWithSha256AesCbc.ENC_SCHEMA, iv);
         dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
         dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));
-        dccValidationRequest.setEncScheme(RsaOaepWithSha256AesCBC.ENC_SCHEMA);
+        dccValidationRequest.setEncScheme(RsaOaepWithSha256AesCbc.ENC_SCHEMA);
         return encryptedData.getDataEncrypted();
     }
 
@@ -148,7 +149,7 @@ public class ValidationServiceTest {
         accessTokenPayload.setVersion("1.0");
         accessTokenPayload.setJti(UUID.randomUUID().toString());
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
-        accessTokenPayload.setExp(Instant.now().getEpochSecond()+356*24*60);
+        accessTokenPayload.setExp(Instant.now().getEpochSecond() + 356 * 24 * 60);
 
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
         accessTokenConditions.setHash("hash");
@@ -160,7 +161,7 @@ public class ValidationServiceTest {
         accessTokenConditions.setCod("DE");
         accessTokenConditions.setRoa("AW");
         accessTokenConditions.setRod("BW");
-        accessTokenConditions.setType(new String[] {"v"});
+        accessTokenConditions.setType(new String[]{"v"});
         accessTokenConditions.setValidationClock("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
@@ -170,7 +171,7 @@ public class ValidationServiceTest {
         return accessTokenPayload;
     }
 
-    private String signDcc(byte[] data, PrivateKey privateKey)  {
+    private String signDcc(byte[] data, PrivateKey privateKey) {
         return dccSign.signDcc(data, privateKey);
     }
 

@@ -2,20 +2,22 @@ package eu.europa.ec.dgc.validation.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dgca.verifier.app.engine.data.Rule;
 import dgca.verifier.app.engine.data.source.remote.valuesets.ValueSetRemote;
 import eu.europa.ec.dgc.validation.entity.ValueSetEntity;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
 import eu.europa.ec.dgc.validation.service.ValueSetCache;
 import eu.europa.ec.dgc.validation.service.ValueSetService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.temporal.TemporalAmount;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -25,16 +27,24 @@ public class DgcgValueSetCache implements ValueSetCache {
     private Map<String, List<String>> valueSets;
     private LocalTime expireTime;
 
-    private final static TemporalAmount expireSpan = Duration.ofMinutes(15);
+    private static final TemporalAmount expireSpan = Duration.ofMinutes(15);
 
+    /**
+     * provide Value Sets.
+     * @return value sets
+     */
     public Map<String, List<String>> provideValueSets() {
-        if (valueSets==null || expireTime==null || expireTime.isAfter(LocalTime.now())) {
+        if (valueSets == null || expireTime == null || expireTime.isAfter(LocalTime.now())) {
             valueSets = getValueSets();
             expireTime = LocalTime.now().plus(expireSpan);
         }
         return valueSets;
     }
 
+    /**
+     * get Value Sets.
+     * @return value sets
+     */
     public Map<String, List<String>> getValueSets() {
         Map<String, List<String>> valueSets = new HashMap<>();
         for (ValueSetListItemDto valueSetListItemDto : valueSetService.getValueSetsList()) {
@@ -48,7 +58,7 @@ public class DgcgValueSetCache implements ValueSetCache {
                 }
                 valueSets.put(valueSetEntity.getId(), ids);
             } catch (JsonProcessingException e) {
-                throw new DccException("can not parse value list",e);
+                throw new DccException("can not parse value list", e);
             }
         }
         return valueSets;

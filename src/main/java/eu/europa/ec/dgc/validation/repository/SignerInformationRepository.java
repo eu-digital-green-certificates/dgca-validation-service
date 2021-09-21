@@ -21,7 +21,6 @@
 package eu.europa.ec.dgc.validation.repository;
 
 
-
 import eu.europa.ec.dgc.validation.entity.SignerInformationEntity;
 import eu.europa.ec.dgc.validation.restapi.dto.KidDto;
 import java.util.List;

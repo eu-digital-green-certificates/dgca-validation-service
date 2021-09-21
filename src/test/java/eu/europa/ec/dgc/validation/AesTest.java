@@ -47,8 +47,8 @@ public class AesTest {
         KeyPair keyPair = keyPairGen.generateKeyPair();
         AESSecrets secretsWrong = deriveSecrets(subject, keyPair.getPrivate());
         try {
-           String decryptedTextWrong = decrypt(cipherText, secretsWrong);
-           fail("expect exception here");
+            String decryptedTextWrong = decrypt(cipherText, secretsWrong);
+            fail("expect exception here");
         } catch (GeneralSecurityException exception) {
 
         }
@@ -64,14 +64,13 @@ public class AesTest {
         secrets.iv = new byte[GCM_IV_LENGTH];
         hkdf.generateBytes(secrets.iv, 0, GCM_IV_LENGTH);
 
-        secrets.secretKey = new byte[AES_KEY_SIZE/8];
-        hkdf.generateBytes(secrets.secretKey, 0, AES_KEY_SIZE/8);
+        secrets.secretKey = new byte[AES_KEY_SIZE / 8];
+        hkdf.generateBytes(secrets.secretKey, 0, AES_KEY_SIZE / 8);
 
         return secrets;
     }
 
-    public static byte[] encrypt(byte[] plaintext, AESSecrets secrets) throws Exception
-    {
+    public static byte[] encrypt(byte[] plaintext, AESSecrets secrets) throws Exception {
         // Get Cipher Instance
         Cipher cipher = Cipher.getInstance(AES_CHIPPER);
 
@@ -90,8 +89,7 @@ public class AesTest {
         return cipherText;
     }
 
-    public static String decrypt(byte[] cipherText, AESSecrets secrets) throws Exception
-    {
+    public static String decrypt(byte[] cipherText, AESSecrets secrets) throws Exception {
         // Get Cipher Instance
         Cipher cipher = Cipher.getInstance(AES_CHIPPER);
 

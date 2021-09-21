@@ -55,13 +55,18 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
     }
 
+    /**
+     * handle exception.
+     * @param e exception
+     * @return respone
+     */
     @ExceptionHandler(JwtException.class)
     public ResponseEntity<ProblemReportDto> handleException(JwtException e) {
         log.error(e.getMessage());
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(new ProblemReportDto("", "Dcc Error", "", e.getMessage()));
     }
 
 

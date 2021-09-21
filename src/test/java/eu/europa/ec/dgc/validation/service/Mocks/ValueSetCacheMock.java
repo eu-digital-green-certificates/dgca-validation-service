@@ -7,9 +7,9 @@ import eu.europa.ec.dgc.validation.service.ValueSetCache;
 
 public class ValueSetCacheMock implements ValueSetCache {
 
-    private Map<String,List<String>> valueSets;
-    public ValueSetCacheMock(Map<String,List<String>> valueSets)
-    {
+    private Map<String, List<String>> valueSets;
+
+    public ValueSetCacheMock(Map<String, List<String>> valueSets) {
         this.valueSets = valueSets;
     }
 
@@ -21,5 +21,5 @@ public class ValueSetCacheMock implements ValueSetCache {
     @Override
     public Map<String, List<String>> getValueSets() {
         return valueSets;
-    }   
+    }
 }

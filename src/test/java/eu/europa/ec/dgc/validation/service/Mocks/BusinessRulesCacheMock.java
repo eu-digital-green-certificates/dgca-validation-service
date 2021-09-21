@@ -7,11 +7,11 @@ import eu.europa.ec.dgc.validation.service.RulesCache;
 
 public class BusinessRulesCacheMock implements RulesCache {
 
-   private List<Rule> rules; 
-   public BusinessRulesCacheMock(List<Rule> rules)
-   {
-      this.rules = rules;
-   }
+    private List<Rule> rules;
+
+    public BusinessRulesCacheMock(List<Rule> rules) {
+        this.rules = rules;
+    }
 
     @Override
     public List<Rule> provideRules(String countryOfArrival, String issuerCountry) {
@@ -19,5 +19,5 @@ public class BusinessRulesCacheMock implements RulesCache {
         return rules;
     }
 
-    
+
 }

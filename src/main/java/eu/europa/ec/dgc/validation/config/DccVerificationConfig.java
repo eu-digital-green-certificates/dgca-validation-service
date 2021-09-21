@@ -11,9 +11,7 @@ import dgca.verifier.app.engine.DefaultAffectedFieldsDataRetriever;
 import dgca.verifier.app.engine.DefaultCertLogicEngine;
 import dgca.verifier.app.engine.DefaultJsonLogicValidator;
 import dgca.verifier.app.engine.JsonLogicValidator;
-import liquibase.pro.packaged.B;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cloud.util.ConditionalOnBootstrapEnabled;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -30,7 +28,7 @@ public class DccVerificationConfig {
     @Bean
     AffectedFieldsDataRetriever affectedFieldsDataRetriever(ObjectMapper objectMapper) throws JsonProcessingException {
         JsonNode jsonNode = objectMapper.readTree(JsonSchemaKt.JSON_SCHEMA_V1);
-        return new DefaultAffectedFieldsDataRetriever( jsonNode, objectMapper);
+        return new DefaultAffectedFieldsDataRetriever(jsonNode, objectMapper);
     }
 
     @Bean
@@ -39,7 +37,8 @@ public class DccVerificationConfig {
     }
 
     @Bean
-    CertLogicEngine certLogicEngine(AffectedFieldsDataRetriever affectedFieldsDataRetriever, JsonLogicValidator jsonLogicValidator) {
+    CertLogicEngine certLogicEngine(AffectedFieldsDataRetriever affectedFieldsDataRetriever,
+                                    JsonLogicValidator jsonLogicValidator) {
         return new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
     }
 }
