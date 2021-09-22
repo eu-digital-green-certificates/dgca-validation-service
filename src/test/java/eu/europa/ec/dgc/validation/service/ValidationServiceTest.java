@@ -101,7 +101,10 @@ public class ValidationServiceTest {
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
         AccessTokenPayload accessTokenPayload = createAccessTocken();
-        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY), "kid");
+        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY), "dev");
+
+        AccessTokenPayload accessTokenValidated = validationService.validateAccessToken("test", subject, "Bearer " + accessToken);
+        assertNotNull("access token validation failed");
 
         System.out.println("jwt: " + accessToken);
 
@@ -149,6 +152,7 @@ public class ValidationServiceTest {
         accessTokenPayload.setVersion("1.0");
         accessTokenPayload.setJti(UUID.randomUUID().toString());
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
+        accessTokenPayload.setAud("test");
         accessTokenPayload.setExp(Instant.now().getEpochSecond() + 356 * 24 * 60);
 
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
@@ -174,5 +178,7 @@ public class ValidationServiceTest {
     private String signDcc(byte[] data, PrivateKey privateKey) {
         return dccSign.signDcc(data, privateKey);
     }
+
+
 
 }

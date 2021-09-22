@@ -62,7 +62,7 @@ dgc:
   encAliases: validationserviceenckey
   signAliases: validationservicesignkey
   activeSignKey: validationservicesignkey
-  accessKeys: overwrite_my_by_env
+  accessKeys: "dev:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIPrtYsW9+Juwp/mt7h8FJ3LgFRIUl2Vlmcl1DUm5gNHl0LnHIL4Jff6mg6yVhehdQiMvkhUtTvmFIUWONSJEnw=="
 
 
 
