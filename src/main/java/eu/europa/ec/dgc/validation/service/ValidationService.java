@@ -128,7 +128,7 @@ public class ValidationService {
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(subject);
-        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate");
+        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate/"+subject);
 
         return validationInitResponse;
     }
