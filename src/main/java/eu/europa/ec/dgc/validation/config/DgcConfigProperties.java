@@ -60,4 +60,5 @@ public class DgcConfigProperties {
     private String[] signAliases;
     private String activeSignKey;
     private String accessKeys;
+    private String decoratorUrl;
 }

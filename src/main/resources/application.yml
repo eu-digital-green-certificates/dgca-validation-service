@@ -63,6 +63,7 @@ dgc:
   signAliases: validationservicesignkey
   activeSignKey: validationservicesignkey
   accessKeys: overwrite_my_by_env
+#  decoratorUrl: https://decorator.server/identity
 
 
 

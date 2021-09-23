@@ -41,7 +41,7 @@ public class ValidationService {
     private final AccessTokenParser accessTokenParser;
     private final DccCryptService dccCryptService;
     private final DccSign dccSign;
-    private final FixAccessTokenKeyProvider accessTokenKeyProvider;
+    private final AccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
 
     /**
