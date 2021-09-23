@@ -8,9 +8,12 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
+import eu.europa.ec.dgc.validation.restapi.dto.IdentityResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJwk;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.VerificationMethod;
 import eu.europa.ec.dgc.validation.service.impl.FixAccessTokenKeyProvider;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
@@ -24,6 +27,10 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
+
+import com.nimbusds.jose.jwk.KeyUse;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -43,7 +50,7 @@ public class ValidationService {
     private final DccSign dccSign;
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
-
+    private final IdentityService identityService;
     /**
      * validate Access Token.
      * @param audience audience
@@ -110,7 +117,7 @@ public class ValidationService {
      * @param subject subject random string (uuid)
      * @return ValidationInitResponse
      */
-    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject) {
+    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject, Boolean encryption, Boolean signature) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
         validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.OPEN);
         validationInquiry.setSubject(subject);
@@ -124,8 +131,32 @@ public class ValidationService {
         long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
-
+        
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
+        IdentityResponse response = identityService.getIdentity();
+        if(signature!=null && signature.booleanValue())
+        {
+            PublicKeyJwk result = response.getVerificationMethod().stream()
+                                                                .filter(x->x.getPublicKeyJwk().getUse().equals(KeyUse.SIGNATURE.toString()) && 
+                                                                            x.getId().contains(dgcConfigProperties.getActiveSignKey()))
+                                                                .findFirst()
+                                                                .get()
+                                                                .getPublicKeyJwk();
+            if(result!=null)
+             validationInitResponse.setSigKey(result);
+        }
+
+        if(encryption!=null && encryption.booleanValue())
+        {
+            PublicKeyJwk result = response.getVerificationMethod().stream()
+                                                                .filter(x->x.getPublicKeyJwk().getUse().equals(KeyUse.ENCRYPTION.toString()))
+                                                                .findAny()
+                                                                .get()
+                                                                .getPublicKeyJwk();
+            if(result!=null)
+             validationInitResponse.setEncKey(result);
+        }
+   
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(subject);
         validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate/" + subject);
