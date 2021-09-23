@@ -5,10 +5,8 @@ import lombok.Data;
 
 @Data
 public class VerificationMethod {
-    @JsonProperty("Id")
     String id;
     String type;
     String controller;
-    @JsonProperty("publicKeyJWK")
     PublicKeyJwk publicKeyJwk;
 }
