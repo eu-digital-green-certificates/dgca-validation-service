@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class IdentityResponse {
-    @JsonProperty("Id")
     String id;
     List<VerificationMethod> verificationMethod;
 }
