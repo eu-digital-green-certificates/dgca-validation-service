@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(prefix="dgc", name="decoratorUrl", matchIfMissing = true, havingValue = "fix")
+@ConditionalOnProperty(prefix = "dgc", name = "decoratorUrl", matchIfMissing = true, havingValue = "fix")
 public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
     private final Map<String,PublicKey> publicKeys = new HashMap<>();
     private static final String UNSET_KEYS_VALUE = "overwrite_my_by_env";
@@ -37,7 +37,7 @@ public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
         String keys = dgcConfigProperties.getAccessKeys();
         KeyFactory kf = KeyFactory.getInstance("EC");
         if (UNSET_KEYS_VALUE.equals(keys)) {
-             throw new IllegalArgumentException("please set env variable DGC_ACCESSKEYS for access keys "
+            throw new IllegalArgumentException("please set env variable DGC_ACCESSKEYS for access keys "
                 + "'kid1:publicKey1:kid2:publicKey2'");
         } else {
             String[] keysSplit = keys.split(":");

@@ -22,51 +22,60 @@ import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Base64;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(prefix="dgc", name="decoratorUrl")
+@ConditionalOnProperty(prefix = "dgc", name = "decoratorUrl")
 public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
-    private final Map<String,PublicKey> publicKeys = new HashMap<>();
+    private final Map<String, PublicKey> publicKeys = new HashMap<>();
     private final DgcConfigProperties dgcConfigProperties;
 
+    /**
+     * load keys from identity document of decorator.
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
+     */
     @PostConstruct
     public void loadKeys() throws IOException, InterruptedException {
         String decoratorUrl = dgcConfigProperties.getDecoratorUrl();
-        log.info("accessing identity document from decorator url: {}",decoratorUrl);
+        log.info("accessing identity document from decorator url: {}", decoratorUrl);
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(decoratorUrl))
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode()!=200) {
+        if (response.statusCode() != 200) {
             loadKeysFrom(response.body());
         } else {
-            throw new DccException("can not load identity document from "+decoratorUrl
-                +" response code "+response.statusCode());
+            throw new DccException("can not load identity document from " + decoratorUrl
+                + " response code " + response.statusCode());
         }
     }
 
+    /**
+     * load keys from json string.
+     * @param identityJson json
+     * @throws JsonProcessingException exception
+     */
     public void loadKeysFrom(String identityJson) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode json = objectMapper.readTree(identityJson);
         JsonNode verificationMethods = json.get("verificationMethod");
-        if (verificationMethods!=null && verificationMethods.isArray()) {
+        if (verificationMethods != null && verificationMethods.isArray()) {
             for (JsonNode verificationMethod : verificationMethods) {
                 JsonNode idNode = verificationMethod.get("id");
-                if (idNode!=null && idNode.isTextual()) {
+                if (idNode != null && idNode.isTextual()) {
                     String id = idNode.asText();
                     if (id.contains("AccessTokenSignKey")) {
-                        JsonNode publicKeyJWK = verificationMethod.get("publicKeyJWK");
-                        if (publicKeyJWK!=null && publicKeyJWK.isObject()) {
-                            JsonNode kidNode = publicKeyJWK.get("kid");
-                            JsonNode x5cNode = publicKeyJWK.get("x5c");
-                            if (kidNode!=null && kidNode.isTextual()
-                                && x5cNode!=null && x5cNode.isTextual()) {
+                        JsonNode publicKeyJwk = verificationMethod.get("publicKeyJWK");
+                        if (publicKeyJwk != null && publicKeyJwk.isObject()) {
+                            JsonNode kidNode = publicKeyJwk.get("kid");
+                            JsonNode x5cNode = publicKeyJwk.get("x5c");
+                            if (kidNode != null && kidNode.isTextual()
+                                && x5cNode != null && x5cNode.isTextual()) {
                                 String kid = kidNode.asText();
                                 String x5c = x5cNode.asText();
                                 importKey(kid, x5c);
@@ -78,7 +87,7 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
         }
     }
 
-    private void importKey(String kid, String x5c)  {
+    private void importKey(String kid, String x5c) {
         try {
             CertificateFactory certificateFactory = CertificateFactory
                 .getInstance("X.509");
@@ -86,9 +95,9 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
             Certificate certificate = certificateFactory
                 .generateCertificate(byteArrayInputStream);
             publicKeys.put(kid, certificate.getPublicKey());
-            log.info("access key for kid={} imported from identity json",kid);
+            log.info("access key for kid={} imported from identity json", kid);
         } catch (CertificateException e) {
-            log.warn("can not import access public key from identity json for kid: "+kid,e);
+            log.warn("can not import access public key from identity json for kid: " + kid, e);
         }
 
     }
