@@ -59,6 +59,7 @@ public class ValidationService {
             String kid = (String) token.getHeader().get("kid");
 
             if (kid == null) {
+                log.debug("kid missing");
                 return null;
             }
 
@@ -69,27 +70,33 @@ public class ValidationService {
                 case "ES256":
                 case "PS256":
                     break;
-                default:
+                default: {
+                    log.debug("wrong algorithm");
                     return null;
+                }
             }
 
             Claims claims = (Claims) token.getBody();
 
             if (claims.containsKey("exp")
                 && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
+                    log.debug("expired");
                 return null;
             }
 
             if (claims.containsKey("iat")
                 && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
+                    log.debug("iat in the future");
                 return null;
             }
 
             if (claims.containsKey("aud") && !claims.getAudience().equals(audience)) {
+                log.debug("wrong audience");
                 return null;
             }
 
             if (claims.containsKey("sub") && !claims.getSubject().equals(subject)) {
+                log.debug("subject wrong");
                 return null;
             }
 
@@ -98,6 +105,7 @@ public class ValidationService {
                     plainToken, accessTokenKeyProvider.getPublicKey(kid));
                 return accessToken;
             } catch (Exception e) {
+                log.debug("token not correctly signed");
                 return null;
             }
         }
