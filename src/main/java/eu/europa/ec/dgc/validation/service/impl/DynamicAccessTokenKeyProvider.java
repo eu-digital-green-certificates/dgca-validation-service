@@ -47,7 +47,7 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
             .uri(URI.create(decoratorUrl))
             .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
+        if (response.statusCode() == 200) {
             loadKeysFrom(response.body());
         } else {
             throw new DccException("can not load identity document from " + decoratorUrl
@@ -70,7 +70,7 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
                 if (idNode != null && idNode.isTextual()) {
                     String id = idNode.asText();
                     if (id.contains("AccessTokenSignKey")) {
-                        JsonNode publicKeyJwk = verificationMethod.get("publicKeyJWK");
+                        JsonNode publicKeyJwk = verificationMethod.get("publicKeyJwk");
                         if (publicKeyJwk != null && publicKeyJwk.isObject()) {
                             JsonNode kidNode = publicKeyJwk.get("kid");
                             JsonNode x5cNode = publicKeyJwk.get("x5c");

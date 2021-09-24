@@ -59,7 +59,7 @@ public class ValidationService {
             String kid = (String) token.getHeader().get("kid");
 
             if (kid == null) {
-                log.warn("access token: kid was not found");
+                log.warn("revoke access token: kid was not found");
                 return null;
             }
 
@@ -71,7 +71,7 @@ public class ValidationService {
                 case "PS256":
                     break;
                 default:
-                    log.warn("access token: unsupported algorithm");
+                    log.warn("revoke access token: unsupported algorithm");
                     return null;
             }
 
@@ -79,24 +79,24 @@ public class ValidationService {
 
             if (claims.containsKey("exp")
                 && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
-                log.warn("access token: expired");
+                log.warn("revoke access token: expired");
                 return null;
             }
 
             if (claims.containsKey("iat")
                 && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
-                log.warn("access token: iat in the future");
+                log.warn("revoke access token: iat in the future");
                 return null;
             }
 
             if (claims.containsKey("aud")
                 && (claims.getAudience() == null || !claims.getAudience().equals(audience))) {
-                log.warn("access token: aud");
+                log.warn("revoke access token: aud");
                 return null;
             }
 
             if (claims.containsKey("sub") && !subject.equals(claims.getSubject())) {
-                log.warn("access token: sub mismatch");
+                log.warn("revoke access token: sub mismatch");
                 return null;
             }
 
@@ -105,7 +105,7 @@ public class ValidationService {
                     plainToken, accessTokenKeyProvider.getPublicKey(kid));
                 return accessToken;
             } catch (Exception e) {
-                log.warn("access token: parsing",e);
+                log.warn("revoke access token: parsing",e);
                 return null;
             }
         }

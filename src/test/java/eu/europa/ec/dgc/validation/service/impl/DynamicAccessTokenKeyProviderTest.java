@@ -17,6 +17,7 @@ class DynamicAccessTokenKeyProviderTest {
         String identityJson = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 
         dynamicAccessTokenKeyProvider.loadKeysFrom(identityJson);
+        assertNotNull(dynamicAccessTokenKeyProvider.getPublicKey("bS8D2/Wz5tY="));
 
     }
 }
