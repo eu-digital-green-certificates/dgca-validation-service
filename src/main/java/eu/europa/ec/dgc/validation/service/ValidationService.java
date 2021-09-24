@@ -120,8 +120,7 @@ public class ValidationService {
         if (validationInitRequest.getNonce() != null) {
             validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
         }
-        long timeNow = Instant.now().getEpochSecond();
-        long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
+        long expirationTime = Instant.now().plusSeconds(dgcConfigProperties.getValidationExpire()).getEpochSecond();
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
 
