@@ -37,9 +37,6 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.ResultTypeIdentifier;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
-import io.vavr.collection.HashMap;
-import kotlin.Triple;
-
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -59,6 +56,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+
+import kotlin.Triple;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -88,14 +87,15 @@ public class DccValidator {
     /**
      * Tries to convert String into a version based on pattern majorVersion.minorVersion.patchVersion.
      */
-    private static Triple<Integer, Integer, Integer> toVersion(String s) 
-    {
-     try {
-          String[] versionPieces = s.split("\\.");
-          return new Triple<Integer,Integer,Integer>(Integer.valueOf(versionPieces[0]), Integer.valueOf(versionPieces[1]), Integer.valueOf(versionPieces[2]));
-         } catch (Exception e) {
-                return null;
-         }
+    private static Triple<Integer, Integer, Integer> toVersion(String s) {
+        try {
+            String[] versionPieces = s.split("\\.");
+            return new Triple<Integer,Integer,Integer>(Integer.valueOf(versionPieces[0]), 
+                                                       Integer.valueOf(versionPieces[1]), 
+                                                       Integer.valueOf(versionPieces[2]));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @PostConstruct
@@ -340,60 +340,51 @@ public class DccValidator {
             )
             .map(t -> t)
             .collect(Collectors.toList());
-        Hashtable<String,Triple<Integer,Integer,Integer>> identifierVersions = new Hashtable<String,Triple<Integer,Integer,Integer>>();
+        Hashtable<String,Triple<Integer,Integer,Integer>> identifierVersions = 
+                                                                new Hashtable<String,Triple<Integer,Integer,Integer>>();
         Hashtable<String,Rule> ruleVersions = new Hashtable<String,Rule>();
         ArrayList<Rule> rulesOut = new ArrayList<Rule>();
         for (Rule rule : rules) {
-            if(!identifierVersions.containsKey(rule.getIdentifier()))
-            {
+            if (!identifierVersions.containsKey(rule.getIdentifier())) {
                 identifierVersions.put(rule.getIdentifier(), toVersion(rule.getVersion()));
                 ruleVersions.put(rule.getIdentifier(), rule);
             }
-            var currVersion= toVersion(rule.getVersion());
-            var prevVersion=identifierVersions.get(rule.getIdentifier());
+            var currVersion = toVersion(rule.getVersion());
+            var prevVersion = identifierVersions.get(rule.getIdentifier());
 
-            if(currVersion != null && prevVersion != null)
-            {
-                if(currVersion.component1()<prevVersion.component1())
-                {
+            if (currVersion != null && prevVersion != null) {
+                if (currVersion.component1()<prevVersion.component1()) {
                     rulesOut.add(rule);
                     continue;   
                 }
 
-                if(currVersion.component1()>prevVersion.component1())
-                {
+                if (currVersion.component1() > prevVersion.component1()) {
                     rulesOut.add(ruleVersions.get(rule.getIdentifier()));
                     ruleVersions.put(rule.getIdentifier(), rule);
                     identifierVersions.put(rule.getIdentifier(), currVersion);
                     continue;
                 }
 
-                if(currVersion.component1()==prevVersion.component1())
-                {
-                    if(currVersion.component2()<prevVersion.component2())
-                    {
+                if (currVersion.component1() == prevVersion.component1()) {
+                    if(currVersion.component2()<prevVersion.component2()) {
                         rulesOut.add(rule);
                         continue;   
                     }
 
-                    if(currVersion.component2()>prevVersion.component2())
-                    {
+                    if(currVersion.component2() > prevVersion.component2()) {
                         rulesOut.add(ruleVersions.get(rule.getIdentifier()));
                         ruleVersions.put(rule.getIdentifier(), rule);
                         identifierVersions.put(rule.getIdentifier(), currVersion);
                         continue;
                     }
 
-                    if(currVersion.component2()==prevVersion.component2())
-                    {
-                        if(currVersion.component3()<prevVersion.component3())
-                        {
+                    if(currVersion.component2() == prevVersion.component2()) {
+                        if(currVersion.component3()<prevVersion.component3()) {
                             rulesOut.add(rule);
                             continue;   
                         }
 
-                        if(currVersion.component3()>prevVersion.component3())
-                        {
+                        if(currVersion.component3() > prevVersion.component3()) {
                             rulesOut.add(ruleVersions.get(rule.getIdentifier()));
                             ruleVersions.put(rule.getIdentifier(), rule);
                             identifierVersions.put(rule.getIdentifier(), currVersion);
