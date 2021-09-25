@@ -80,13 +80,13 @@ public class ValidationService {
 
             if (claims.containsKey("exp")
                 && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
-                    log.debug("expired");
+                log.debug("expired");
                 return null;
             }
 
             if (claims.containsKey("iat")
                 && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
-                    log.debug("iat in the future");
+                log.debug("iat in the future");
                 return null;
             }
 
