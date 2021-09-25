@@ -64,6 +64,7 @@ public class ValidationService {
             String kid = (String) token.getHeader().get("kid");
 
             if (kid == null) {
+                log.debug("kid missing");
                 return null;
             }
 
@@ -74,27 +75,33 @@ public class ValidationService {
                 case "ES256":
                 case "PS256":
                     break;
-                default:
+                default: {
+                    log.debug("wrong algorithm");
                     return null;
+                }
             }
 
             Claims claims = (Claims) token.getBody();
 
             if (claims.containsKey("exp")
                 && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
+                log.debug("expired");
                 return null;
             }
 
             if (claims.containsKey("iat")
                 && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
+                log.debug("iat in the future");
                 return null;
             }
 
             if (claims.containsKey("aud") && !claims.getAudience().equals(audience)) {
+                log.debug("wrong audience");
                 return null;
             }
 
             if (claims.containsKey("sub") && !claims.getSubject().equals(subject)) {
+                log.debug("subject wrong");
                 return null;
             }
 
@@ -103,6 +110,7 @@ public class ValidationService {
                     plainToken, accessTokenKeyProvider.getPublicKey(kid));
                 return accessToken;
             } catch (Exception e) {
+                log.debug("token not correctly signed");
                 return null;
             }
         }
@@ -128,8 +136,7 @@ public class ValidationService {
         if (validationInitRequest.getNonce() != null) {
             validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
         }
-        long timeNow = Instant.now().getEpochSecond();
-        long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
+        long expirationTime = Instant.now().plusSeconds(dgcConfigProperties.getValidationExpire()).getEpochSecond();
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
         

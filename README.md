@@ -30,17 +30,64 @@
 
 This repository contains the source code of the EU Digital COVID Certificate Validation Service.
 
-- [ ] TODO: Describe Component
+Validation service can validate eu digital covid certificates for travel and booking services 
+using business rules from 
+[dgca-businessrule-service](https://github.com/eu-digital-green-certificates/dgca-businessrule-service) and
+certificates from [dgca-verifier-service](https://github.com/eu-digital-green-certificates/dgca-verifier-service).
+
+The validation has complex work flow that involves
+
+   * [dgca-validation-decorator](https://github.com/eu-digital-green-certificates/dgca-validation-decorator) - additional service on travel system 
+   * [dgca-booking-demo](https://github.com/eu-digital-green-certificates/dgca-booking-demo) - travel system mock
+   * [dgca-booking-demo-frontend](https://github.com/eu-digital-green-certificates/dgca-booking-demo-frontend)
+   * [dgca-verifier-app-android](https://github.com/eu-digital-green-certificates/dgca-verifier-app-android) - provide dcc
 
 ## Development
 
 ### Prerequisites
 
-- [ ] TODO: Prerequisites
+- [Open JDK 11](https://openjdk.java.net)
+- [Maven](https://maven.apache.org)
+- [Docker](https://www.docker.com)
+- Authenticate to [Github Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
+
+#### Authenticating in to GitHub Packages
+
+As some of the required libraries (and/or versions are pinned/available only from GitHub Packages) You need to authenticate
+to [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
+The following steps need to be followed
+
+- Create [PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with scopes:
+    - `read:packages` for downloading packages
+
+##### GitHub Maven
+
+- Copy/Augment `~/.m2/settings.xml` with the contents of `settings.xml` present in this repository
+    - Replace `${app.packages.username}` with your github username
+    - Replace `${app.packages.password}` with the generated PAT
+
+##### GitHub Docker Registry
+
+- Run `docker login docker.pkg.github.com/eu-digital-green-certificates` before running further docker commands.
+    - Use your GitHub username as username
+    - Use the generated PAT as password
 
 ### Build
 
-- [ ] TODO: Build
+Whether you cloned or downloaded the 'zipped' sources you will either find the sources in the chosen checkout-directory or get a zip file with the source code, which you can expand to a folder of your choice.
+
+In either case open a terminal pointing to the directory you put the sources in. The local build process is described afterwards depending on the way you choose.
+
+### Build with maven
+* Check [settings.xml](settings.xml) in root folder and copy the servers to your own `~/.m2/settings.xml` to connect the GitHub repositories we use in our code. Provide your GitHub username and access token (see [GitHub Help](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token)) under the variables suggested.
+* Run `mvn clean package` from the project root folder
+
+### Run with docker
+* Perform maven build as described above
+* Run `docker-compose up` from the project root folder
+
+After all containers have started you will be able to reach the application on your [local machine](http://localhost:8080/dgci/status) under port 8080.
+
 
 ## Documentation
 

@@ -46,8 +46,7 @@ public class DgcConfigProperties {
         private Integer lockLimit;
     }
 
-    @DurationUnit(ChronoUnit.SECONDS)
-    private Duration validationExpire = Duration.ofMinutes(60);
+    private long validationExpire = 3600;
 
     private String serviceUrl;
 
