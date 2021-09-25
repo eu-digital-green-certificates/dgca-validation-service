@@ -142,10 +142,14 @@ public class ValidationService {
         
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         IdentityResponse response = identityService.getIdentity();
-        if (signature!=null && signature.booleanValue()) {
+        if (signature != null && signature.booleanValue()) {
             PublicKeyJwk result = response.getVerificationMethod().stream()
-                                                                .filter(x -> x.getPublicKeyJwk().getUse().equals(KeyUse.SIGNATURE.toString()) && 
-                                                                             x.getId().contains(dgcConfigProperties.getActiveSignKey()))
+                                                                .filter(x -> x.getPublicKeyJwk()
+                                                                              .getUse()
+                                                                              .equals(KeyUse.SIGNATURE.toString()) 
+                                                                             && 
+                                                                             x.getId()
+                                                                              .contains(dgcConfigProperties.getActiveSignKey()))
                                                                 .findFirst()
                                                                 .get()
                                                                 .getPublicKeyJwk();
@@ -156,7 +160,9 @@ public class ValidationService {
 
         if (encryption != null && encryption.booleanValue()) {
             PublicKeyJwk result = response.getVerificationMethod().stream()
-                                                                .filter(x ->  x.getPublicKeyJwk().getUse().equals(KeyUse.ENCRYPTION.toString()))
+                                                                .filter(x ->  x.getPublicKeyJwk()
+                                                                               .getUse()
+                                                                               .equals(KeyUse.ENCRYPTION.toString()))
                                                                 .findAny()
                                                                 .get()
                                                                 .getPublicKeyJwk();
