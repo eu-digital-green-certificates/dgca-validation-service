@@ -59,7 +59,7 @@ public class ValidationController {
                                                                  @RequestHeader("X-Version") String version,
                                                                  @RequestHeader(value = "X-Crypto-Enc",
                                                                                 required = false) Boolean enc,
-                                                                 @RequestHeader(value ="X-Crypto-Sig",
+                                                                 @RequestHeader(value = "X-Crypto-Sig",
                                                                                 required = false) Boolean sig) {
 
         AccessTokenPayload accessTokenPayload = validationService.validateAccessToken(

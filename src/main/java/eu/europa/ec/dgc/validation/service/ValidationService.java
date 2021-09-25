@@ -149,12 +149,13 @@ public class ValidationService {
                                                                               .equals(KeyUse.SIGNATURE.toString()) 
                                                                              && 
                                                                              x.getId()
-                                                                              .contains(dgcConfigProperties.getActiveSignKey()))
+                                                                              .contains(dgcConfigProperties
+                                                                                            .getActiveSignKey()))
                                                                 .findFirst()
                                                                 .get()
                                                                 .getPublicKeyJwk();
             if (result != null) {
-             validationInitResponse.setSigKey(result);
+                validationInitResponse.setSigKey(result);
             }
         }
 
@@ -167,7 +168,7 @@ public class ValidationService {
                                                                 .get()
                                                                 .getPublicKeyJwk();
             if (result != null) {
-             validationInitResponse.setEncKey(result);
+                validationInitResponse.setEncKey(result);
             }
         }
    
