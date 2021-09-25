@@ -56,7 +56,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
-
 import kotlin.Triple;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -353,8 +352,8 @@ public class DccValidator {
             var prevVersion = identifierVersions.get(rule.getIdentifier());
 
             if (currVersion != null && prevVersion != null) {
-                if (currVersion.component1()<prevVersion.component1()) {
-                    rulesOut.add(rule);
+                if (currVersion.component1() < prevVersion.component1()) {
+                    rulesOut.add(rule); 
                     continue;   
                 }
 
@@ -366,25 +365,25 @@ public class DccValidator {
                 }
 
                 if (currVersion.component1() == prevVersion.component1()) {
-                    if(currVersion.component2()<prevVersion.component2()) {
+                    if(currVersion.component2() < prevVersion.component2()) {
                         rulesOut.add(rule);
                         continue;   
                     }
 
-                    if(currVersion.component2() > prevVersion.component2()) {
+                    if (currVersion.component2() > prevVersion.component2()) {
                         rulesOut.add(ruleVersions.get(rule.getIdentifier()));
                         ruleVersions.put(rule.getIdentifier(), rule);
                         identifierVersions.put(rule.getIdentifier(), currVersion);
                         continue;
                     }
 
-                    if(currVersion.component2() == prevVersion.component2()) {
-                        if(currVersion.component3()<prevVersion.component3()) {
+                    if (currVersion.component2() == prevVersion.component2()) {
+                        if(currVersion.component3() < prevVersion.component3()) {
                             rulesOut.add(rule);
                             continue;   
                         }
 
-                        if(currVersion.component3() > prevVersion.component3()) {
+                        if (currVersion.component3() > prevVersion.component3()) {
                             rulesOut.add(ruleVersions.get(rule.getIdentifier()));
                             ruleVersions.put(rule.getIdentifier(), rule);
                             identifierVersions.put(rule.getIdentifier(), currVersion);
