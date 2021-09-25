@@ -365,7 +365,7 @@ public class DccValidator {
                 }
 
                 if (currVersion.component1() == prevVersion.component1()) {
-                    if(currVersion.component2() < prevVersion.component2()) {
+                    if (currVersion.component2() < prevVersion.component2()) {
                         rulesOut.add(rule);
                         continue;   
                     }
@@ -378,7 +378,7 @@ public class DccValidator {
                     }
 
                     if (currVersion.component2() == prevVersion.component2()) {
-                        if(currVersion.component3() < prevVersion.component3()) {
+                        if (currVersion.component3() < prevVersion.component3()) {
                             rulesOut.add(rule);
                             continue;   
                         }
