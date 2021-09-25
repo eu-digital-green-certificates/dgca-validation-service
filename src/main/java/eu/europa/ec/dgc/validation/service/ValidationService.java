@@ -47,6 +47,7 @@ public class ValidationService {
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
     private final IdentityService identityService;
+
     /**
      * validate Access Token.
      * @param audience audience
@@ -141,8 +142,9 @@ public class ValidationService {
                                                                 .findFirst()
                                                                 .get()
                                                                 .getPublicKeyJwk();
-            if (result != null)
+            if (result != null) {
              validationInitResponse.setSigKey(result);
+            }
         }
 
         if (encryption != null && encryption.booleanValue()) {
@@ -151,8 +153,9 @@ public class ValidationService {
                                                                 .findAny()
                                                                 .get()
                                                                 .getPublicKeyJwk();
-            if (result != null)
+            if (result != null) {
              validationInitResponse.setEncKey(result);
+            }
         }
    
         validationInitResponse.setExp(expirationTime);
