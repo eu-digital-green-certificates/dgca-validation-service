@@ -1,9 +1,7 @@
 package eu.europa.ec.dgc.validation.restapi.dto;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
-
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

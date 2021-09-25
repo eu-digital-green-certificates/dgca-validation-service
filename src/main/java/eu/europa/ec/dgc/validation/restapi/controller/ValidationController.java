@@ -57,8 +57,10 @@ public class ValidationController {
                                                                      validationInitRequest,
                                                                  @RequestHeader("Authorization") String accessToken,
                                                                  @RequestHeader("X-Version") String version,
-                                                                 @RequestHeader(value="X-Crypto-Enc",required = false) Boolean enc,
-                                                                 @RequestHeader(value="X-Crypto-Sig",required = false) Boolean sig) {
+                                                                 @RequestHeader(value = "X-Crypto-Enc",
+                                                                                required = false) Boolean enc,
+                                                                 @RequestHeader(value ="X-Crypto-Sig",
+                                                                                required = false) Boolean sig) {
 
         AccessTokenPayload accessTokenPayload = validationService.validateAccessToken(
             dgcConfigProperties.getServiceUrl() + "/initialize/" + subject, subject, accessToken);
