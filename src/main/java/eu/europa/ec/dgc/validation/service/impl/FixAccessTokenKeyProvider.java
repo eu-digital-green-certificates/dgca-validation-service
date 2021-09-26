@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty(prefix = "dgc", name = "decoratorUrl", matchIfMissing = true, havingValue = "fix")
 public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
     private final Map<String,PublicKey> publicKeys = new HashMap<>();
-    private static final String UNSET_KEYS_VALUE = "overwrite_my_by_env";
+    private static final String UNSET_KEYS_VALUE = "overwrite_me_by_env";
     private final DgcConfigProperties dgcConfigProperties;
 
     /**
@@ -34,25 +34,27 @@ public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
      */
     @PostConstruct
     public void loadKeys() throws NoSuchAlgorithmException, InvalidKeySpecException {
-        String keys = dgcConfigProperties.getAccessKeys();
+        String[] keys = dgcConfigProperties.getAccessKeys();
         KeyFactory kf = KeyFactory.getInstance("EC");
-        if (UNSET_KEYS_VALUE.equals(keys)) {
+        if (keys == null || UNSET_KEYS_VALUE.equals(keys[0])) {
             throw new IllegalArgumentException("please set env variable DGC_ACCESSKEYS for access keys "
-                + "'kid1:publicKey1:kid2:publicKey2'");
+                + "'kid1:publicKey1,kid2:publicKey2'");
         } else {
-            String[] keysSplit = keys.split(":");
-            if (keysSplit.length % 2 != 0) {
-                throw new IllegalArgumentException("wrong format for access keys env variable: "
-                    + "DGC_ACCESSKEYS, expect: 'kid1:publicKey1:kid2:publicKey2'");
-            }
-            for (int i = 0;i < keysSplit.length;i += 2) {
-                String kid = keysSplit[i];
-                byte[] keyBytes = Base64.getDecoder().decode(keysSplit[i + 1]);
-                X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
-                PublicKey publicKey = kf.generatePublic(spec);
-                publicKeys.put(kid,publicKey);
-                log.info("access key with kid={} was registered",kid);
-            }
+           for (String key : keys) {
+                String[] keysSplit = key.split(":");
+                if (keysSplit.length % 2 != 0) {
+                    throw new IllegalArgumentException("wrong format for access keys env variable: "
+                        + "DGC_ACCESSKEYS, expect: 'kid1:publicKey1'");
+                }
+                for (int i = 0;i < keysSplit.length;i += 2) {
+                    String kid = keysSplit[i];
+                    byte[] keyBytes = Base64.getDecoder().decode(keysSplit[i + 1]);
+                    X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+                    PublicKey publicKey = kf.generatePublic(spec);
+                    publicKeys.put(kid,publicKey);
+                    log.info("access key with kid={} was registered",kid);
+                }
+           }
         }
     }
 

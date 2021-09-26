@@ -70,9 +70,10 @@ public class ValidationService {
                 case "ES256":
                 case "PS256":
                     break;
-                default:
+                default: {
                     log.warn("revoke access token: unsupported algorithm");
                     return null;
+                }
             }
             
             Claims claims = (Claims) token.getBody();

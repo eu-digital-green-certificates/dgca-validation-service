@@ -58,6 +58,7 @@ public class DgcConfigProperties {
     @Value("${dgc.signAliases}")
     private String[] signAliases;
     private String activeSignKey;
-    private String accessKeys;
+    @Value("${dgc.accessKeys}")
+    private String[] accessKeys;
     private String decoratorUrl;
 }
