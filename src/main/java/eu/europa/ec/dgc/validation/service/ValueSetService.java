@@ -46,9 +46,8 @@ public class ValueSetService {
     private final ValueSetRepository valueSetRepository;
 
 
-
     /**
-     *  Gets list of all value set ids and hashes.
+     * Gets list of all value set ids and hashes.
      */
     public List<ValueSetListItemDto> getValueSetsList() {
 
@@ -57,18 +56,18 @@ public class ValueSetService {
     }
 
 
-
     /**
-     *  Gets a value set by its hash value.
+     * Gets a value set by its hash value.
      */
     @Transactional
     public ValueSetEntity getValueSetByHash(String hash) {
 
-        return  valueSetRepository.findOneByHash(hash);
+        return valueSetRepository.findOneByHash(hash);
     }
 
     /**
      * Updates the list of value sets.
+     *
      * @param valueSets list of actual value sets
      */
     @Transactional
@@ -76,7 +75,7 @@ public class ValueSetService {
         List<String> valueSetsHashes = valueSets.stream().map(ValueSetItem::getHash).collect(Collectors.toList());
         List<String> alreadyStoredValueSets = getValueSetsHashList();
         log.debug("Got {} value sets from gateway and {} already stored in the database. Processing update now...",
-                valueSetsHashes.size(), alreadyStoredValueSets.size());
+            valueSetsHashes.size(), alreadyStoredValueSets.size());
 
         if (valueSetsHashes.isEmpty()) {
             log.info("Got no value sets from gateway. Deleting all stored value sets.");
@@ -100,7 +99,8 @@ public class ValueSetService {
 
     /**
      * Saves a value set.
-     * @param hash  The hash value of the value set data.
+     *
+     * @param hash         The hash value of the value set data.
      * @param valueSetName The name of the value set.
      * @param valueSetData The raw value set data.
      */
@@ -117,6 +117,7 @@ public class ValueSetService {
 
     /**
      * Creates a List of value set items from a map of value sets without hashes.
+     *
      * @param valueSetMap the map containing the row value sets.
      * @return List of ValueSetItems
      */
@@ -124,7 +125,7 @@ public class ValueSetService {
         throws NoSuchAlgorithmException {
         List<ValueSetItem> valueSetItems = new ArrayList<>();
 
-        for (Map.Entry<String, String> vse: valueSetMap.entrySet()) {
+        for (Map.Entry<String, String> vse : valueSetMap.entrySet()) {
             ValueSetItem valueSetItem = new ValueSetItem();
             valueSetItem.setHash(certificateUtils.calculateHash(vse.getValue().getBytes(StandardCharsets.UTF_8)));
             valueSetItem.setId(vse.getKey());
@@ -137,6 +138,7 @@ public class ValueSetService {
 
     /**
      * Gets a list of hash values of all stored value sets.
+     *
      * @return List of hash values
      */
     private List<String> getValueSetsHashList() {

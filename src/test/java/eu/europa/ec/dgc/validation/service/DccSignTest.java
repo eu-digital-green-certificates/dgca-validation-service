@@ -20,7 +20,7 @@ class DccSignTest {
         KeyPair keyPair = keyPairGen.generateKeyPair();
 
         String dcc = "dccContent";
-        String dccSignature = dccSign.signDcc(dcc.getBytes(),keyPair.getPrivate());
+        String dccSignature = dccSign.signDcc(dcc.getBytes(), keyPair.getPrivate());
         assertTrue(dccSign.verifySignature(dcc.getBytes(), org.bouncycastle.util.encoders.Base64.decode(dccSignature), keyPair.getPublic()));
     }
 }

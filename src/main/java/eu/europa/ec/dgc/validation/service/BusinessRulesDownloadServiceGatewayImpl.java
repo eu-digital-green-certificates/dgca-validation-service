@@ -21,7 +21,6 @@
 package eu.europa.ec.dgc.validation.service;
 
 
-
 import eu.europa.ec.dgc.gateway.connector.DgcGatewayValidationRuleDownloadConnector;
 import eu.europa.ec.dgc.validation.model.BusinessRuleItem;
 import java.security.NoSuchAlgorithmException;
@@ -61,7 +60,7 @@ public class BusinessRulesDownloadServiceGatewayImpl implements BusinessRulesDow
         try {
             ruleItems = businessRuleService.createBusinessRuleItemList(dgcRuleConnector.getValidationRules().flat());
         } catch (NoSuchAlgorithmException e) {
-            log.error("Failed to hash business rules on download.",e);
+            log.error("Failed to hash business rules on download.", e);
             return;
         }
 

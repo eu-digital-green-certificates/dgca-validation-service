@@ -58,7 +58,7 @@ public class ValueSetsDownloadServiceGatwayImpl implements ValueSetsDownloadServ
         try {
             valueSetItems = valueSetService.createValueSetItemListFromMap(dgcValueSetConnector.getValueSets());
         } catch (NoSuchAlgorithmException e) {
-            log.error("Failed to hash business rules on download.",e);
+            log.error("Failed to hash business rules on download.", e);
             return;
         }
 

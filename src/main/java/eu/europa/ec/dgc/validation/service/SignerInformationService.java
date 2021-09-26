@@ -30,16 +30,12 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
 import javax.annotation.PostConstruct;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +51,7 @@ public class SignerInformationService {
     private void init() {
         X509CertUtils.setProvider(new BouncyCastleProvider());
     }
+
     /**
      * Method to query the db for a certificate with a resume token.
      *
@@ -69,27 +66,31 @@ public class SignerInformationService {
         }
     }
 
+    /**
+     * get Certificates.
+     * @param kid kid
+     * @return List of certificates
+     */
     public List<Certificate> getCertificates(String kid) {
         List<Certificate> certificates = new ArrayList<>();
-        log.debug("Search result by kid:"+kid);
-        log.debug("Repo contains:"+signerInformationRepository.count());
+        log.debug("Search result by kid:" + kid);
+        log.debug("Repo contains:" + signerInformationRepository.count());
         for (SignerInformationEntity signerInformationEntity : signerInformationRepository.findAllByKid(kid)) {
-            log.debug("Found certificates:"+signerInformationEntity.getKid());
+            log.debug("Found certificates:" + signerInformationEntity.getKid());
 
-            X509Certificate certificate = X509CertUtils.parse(X509CertUtils.PEM_BEGIN_MARKER+
-                                                              signerInformationEntity.getRawData()+
-                                                              X509CertUtils.PEM_END_MARKER);
+            X509Certificate certificate = X509CertUtils.parse(X509CertUtils.PEM_BEGIN_MARKER
+                + signerInformationEntity.getRawData()
+                + X509CertUtils.PEM_END_MARKER);
 
-            if(signerInformationEntity.getRawData().contains(X509CertUtils.PEM_BEGIN_MARKER))
-            {
-                certificate = X509CertUtils.parse(signerInformationEntity.getRawData());    
+            if (signerInformationEntity.getRawData().contains(X509CertUtils.PEM_BEGIN_MARKER)) {
+                certificate = X509CertUtils.parse(signerInformationEntity.getRawData());
             }
-            
-            if (certificate!=null) {
+
+            if (certificate != null) {
                 certificates.add(certificate);
             }
         }
-        log.debug("Found certificates:"+certificates.size());
+        log.debug("Found certificates:" + certificates.size());
         return certificates;
     }
 
@@ -116,7 +117,6 @@ public class SignerInformationService {
      * Method to synchronise the certificates in the db with the given List of trusted certificates.
      *
      * @param trustedCerts defines the list of trusted certificates.
-     *
      */
     @Transactional
     public void updateTrustedCertsList(List<TrustListItem> trustedCerts) {
@@ -134,8 +134,8 @@ public class SignerInformationService {
 
         for (TrustListItem cert : trustedCerts) {
             if (!alreadyStoredCerts.contains(cert.getKid())) {
-                saveSignerCertificate(cert.getKid(),cert.getTimestamp(), cert.getRawData());
-                log.debug("Kid saved: "+cert.getKid());
+                saveSignerCertificate(cert.getKid(), cert.getTimestamp(), cert.getRawData());
+                log.debug("Kid saved: " + cert.getKid());
             }
         }
     }
@@ -143,10 +143,9 @@ public class SignerInformationService {
     /**
      * Method adds a new SignerInformationEntity to the db.
      *
-     * @param kid defines the kid of the new SignerInformationEntity.
+     * @param kid       defines the kid of the new SignerInformationEntity.
      * @param createdAt defines the createdAt timestamp of the new SignerInformationEntity.
-     * @param rawData defines the raw certificate data of the new SignerInformationEntity.
-     *
+     * @param rawData   defines the raw certificate data of the new SignerInformationEntity.
      */
     private void saveSignerCertificate(String kid, ZonedDateTime createdAt, String rawData) {
         SignerInformationEntity signerEntity = new SignerInformationEntity();

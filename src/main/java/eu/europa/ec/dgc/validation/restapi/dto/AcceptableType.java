@@ -19,12 +19,17 @@ public enum AcceptableType {
         return typeSymbol;
     }
 
-    public static AcceptableType getTokenForInt(String typeSymbol) {
+    /**
+     * get Token For symbol.
+     * @param typeSymbol typeSymbol
+     * @return AcceptableType
+     */
+    public static AcceptableType getTokenForSymbol(String typeSymbol) {
         for (AcceptableType accessTokenType : AcceptableType.values()) {
             if (accessTokenType.typeSymbol.equals(typeSymbol)) {
                 return accessTokenType;
             }
         }
-        throw new IllegalArgumentException("unknown token type: "+typeSymbol);
+        throw new IllegalArgumentException("unknown token type: " + typeSymbol);
     }
 }

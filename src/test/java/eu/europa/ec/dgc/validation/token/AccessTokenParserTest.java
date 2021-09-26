@@ -4,9 +4,11 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.service.ValidationServiceTest;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.time.Instant;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,7 +29,7 @@ class AccessTokenParserTest {
         accessTokenPayload.setVersion("1.0");
         accessTokenPayload.setJti("jti");
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
-        accessTokenPayload.setExp(Instant.now().getEpochSecond()+60*60);
+        accessTokenPayload.setExp(Instant.now().getEpochSecond() + 60 * 60);
 
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
         accessTokenConditions.setHash("hash");
@@ -39,7 +41,7 @@ class AccessTokenParserTest {
         accessTokenConditions.setCod("DE");
         accessTokenConditions.setRoa("AW");
         accessTokenConditions.setRod("BW");
-        accessTokenConditions.setType(new String[] {"v"});
+        accessTokenConditions.setType(new String[]{"v"});
         accessTokenConditions.setValidationClock("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
         accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
@@ -53,7 +55,7 @@ class AccessTokenParserTest {
         System.out.println(accessTokenCompact);
 
         PublicKey publicKey = ValidationServiceTest.parsePublicKey(ValidationServiceTest.EC_PUBLIC_KEY);
-        
+
         AccessTokenPayload accessTokenParsed = accessTokenParser.parseToken(accessTokenCompact, publicKey);
         assertNotNull(accessTokenParsed);
         assertNotNull(accessTokenParsed.getConditions());

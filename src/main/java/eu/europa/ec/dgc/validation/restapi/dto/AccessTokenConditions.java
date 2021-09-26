@@ -18,7 +18,7 @@ public class AccessTokenConditions {
      */
     private String fnt;
     /**
-     * ICOA 930 transliterated given name
+     * ICOA 930 transliterated given name.
      */
     private String gnt;
     /**
@@ -26,7 +26,7 @@ public class AccessTokenConditions {
      */
     private String dob;
     /**
-     * Contry of Arrival
+     * Contry of Arrival.
      */
     private String coa;
     /**
@@ -55,11 +55,11 @@ public class AccessTokenConditions {
      */
     private String validationClock;
     /**
-     * DCC must be valid from this date (ISO8601 with offset)
+     * DCC must be valid from this date (ISO8601 with offset).
      */
     private String validFrom;
     /**
-     * DCC must be valid minimum to this date (ISO8601 with offset)
+     * DCC must be valid minimum to this date (ISO8601 with offset).
      */
     private String validTo;
 }

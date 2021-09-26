@@ -48,8 +48,7 @@ public class BusinessRuleService {
     private final CertificateUtils certificateUtils;
 
     /**
-     *  Gets list of all business rules ids and hashes.
-     *
+     * Gets list of all business rules ids and hashes.
      */
     public List<BusinessRuleListItemDto> getBusinessRulesList() {
 
@@ -59,7 +58,7 @@ public class BusinessRuleService {
 
 
     /**
-     *  Gets list of all business rules ids and hashes for a country.
+     * Gets list of all business rules ids and hashes for a country.
      */
     public List<BusinessRuleListItemDto> getBusinessRulesListForCountry(String country, String issuerCountry) {
         List<String> list = new ArrayList<String>();
@@ -70,17 +69,19 @@ public class BusinessRuleService {
         return rulesItems;
     }
 
-    /**f
-     *  Gets  a business rule by hash.
+    /**
+     * f
+     * Gets  a business rule by hash.
      */
     @Transactional
     public BusinessRuleEntity getBusinessRuleByCountryAndHash(String country, String hash) {
 
-        return  businessRuleRepository.findOneByCountryAndHash(country, hash);
+        return businessRuleRepository.findOneByCountryAndHash(country, hash);
     }
 
     /**
      * Updates the list of business rules.
+     *
      * @param businessRules list of actual value sets
      */
     @Transactional
@@ -104,6 +105,7 @@ public class BusinessRuleService {
 
     /**
      * Saves a Business rule.
+     *
      * @param rule The rule to be saved.
      */
     @Transactional
@@ -120,6 +122,7 @@ public class BusinessRuleService {
 
     /**
      * Creates a List of business rule items from a list of validation rules.
+     *
      * @param validationRules the list containing the validation rules.
      * @return List of BusinessRuleItems.
      */
@@ -127,7 +130,7 @@ public class BusinessRuleService {
         throws NoSuchAlgorithmException {
         List<BusinessRuleItem> businessRuleItems = new ArrayList<>();
 
-        for (ValidationRule validationRule: validationRules) {
+        for (ValidationRule validationRule : validationRules) {
             BusinessRuleItem businessRuleItem = new BusinessRuleItem();
 
             businessRuleItem.setHash(certificateUtils.calculateHash(
@@ -146,6 +149,7 @@ public class BusinessRuleService {
 
     /**
      * Gets a list of hash values of all stored business rules.
+     *
      * @return List of hash values
      */
     private List<String> getBusinessRulesHashList() {

@@ -1,11 +1,10 @@
 package eu.europa.ec.dgc.validation.service;
 
 
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.KeyUse;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
 
 public interface KeyProvider {
     Certificate receiveCertificate(String keyName);

@@ -47,7 +47,7 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
     @Override
     @Scheduled(fixedDelayString = "${dgc.valueSetsDownload.timeInterval}")
     @SchedulerLock(name = "GatewayDataDownloadService_downloadValueSets", lockAtLeastFor = "PT0S",
-            lockAtMostFor = "${dgc.valueSetsDownload.lockLimit}")
+        lockAtMostFor = "${dgc.valueSetsDownload.lockLimit}")
     public void downloadValueSets() {
         try {
             initializeLogging();
@@ -59,7 +59,7 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
                 valueSetItems = valueSetService.createValueSetItemListFromMap(fetchValueSets(valueSetIds));
                 log.debug("Downloaded {} value set items.", valueSetItems.size());
             } catch (NoSuchAlgorithmException e) {
-                log.error("Failed to hash value set on download.",e);
+                log.error("Failed to hash value set on download.", e);
                 return;
             }
 
@@ -67,7 +67,7 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
                 valueSetService.updateValueSets(valueSetItems);
             } else {
                 log.warn("The download of the value sets seems to fail, as the download connector "
-                        + "returns an empty list. No data will be changed.");
+                    + "returns an empty list. No data will be changed.");
             }
 
             log.debug("Value sets download finished.");
@@ -84,7 +84,8 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
         try {
             HttpResponse response = httpClient.execute(RequestBuilder.get(DCCG_VALUE_SETS_ENDPOINT).build());
             valueSetIds = new ArrayList<>(gson().fromJson(toJsonString(response.getEntity()),
-                    new TypeToken<List<String>>() {}.getType()));
+                new TypeToken<List<String>>() {
+                }.getType()));
         } catch (IOException e) {
             log.error("Could not fetch value set IDs from gateway: {}", e.getMessage());
         }
@@ -104,8 +105,8 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
                 return ZonedDateTime.parse(in.nextString());
             }
         })
-                .enableComplexMapKeySerialization()
-                .create();
+            .enableComplexMapKeySerialization()
+            .create();
     }
 
     private String toJsonString(HttpEntity entity) throws IOException {
@@ -120,7 +121,7 @@ public class ValueSetsDownloadServiceBtpImpl implements ValueSetsDownloadService
         for (String valueSetId : valueSetIds) {
             try {
                 HttpResponse response = httpClient
-                        .execute(RequestBuilder.get(DCCG_VALUE_SETS_ENDPOINT + "/" + valueSetId).build());
+                    .execute(RequestBuilder.get(DCCG_VALUE_SETS_ENDPOINT + "/" + valueSetId).build());
                 valueSets.put(valueSetId, toJsonString(response.getEntity()));
             } catch (IOException e) {
                 log.warn("Could not fetch value set with ID '{}': {}", valueSetId, e.getMessage(), e);

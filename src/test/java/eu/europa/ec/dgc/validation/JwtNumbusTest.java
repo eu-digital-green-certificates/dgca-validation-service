@@ -19,10 +19,12 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+
 import java.security.interfaces.ECPrivateKey;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
+
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.KeyFactorySpi;
@@ -41,11 +43,11 @@ class JwtNimbusTest {
         JWSSigner signer = new ECDSASigner(ecJWK);
 
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("sub","subject");
+        jsonObject.put("sub", "subject");
         JSONArray jsonArray = new JSONArray();
         jsonArray.appendElement(2);
         jsonArray.appendElement(3);
-        jsonObject.put("result",jsonArray);
+        jsonObject.put("result", jsonArray);
 
         // Creates the JWS object with payload
         JWSObject jwsObject = new JWSObject(
@@ -76,7 +78,7 @@ class JwtNimbusTest {
                 .issuer("https://openid.net")
                 .subject("alice")
                 .audience(Arrays.asList("https://app-one.com", "https://app-two.com"))
-                .expirationTime(new Date(now.getTime() + 1000*60*10)) // expires in 10 minutes
+                .expirationTime(new Date(now.getTime() + 1000 * 60 * 10)) // expires in 10 minutes
                 .notBeforeTime(now)
                 .issueTime(now)
                 .jwtID(UUID.randomUUID().toString())
@@ -108,7 +110,8 @@ class JwtNimbusTest {
 
         System.out.println(jwtDeparsed.getJWTClaimsSet());
 
-        System.out.println(jwtDeparsed.getJWTClaimsSet().getIssuer());;
+        System.out.println(jwtDeparsed.getJWTClaimsSet().getIssuer());
+        ;
         System.out.println(jwtDeparsed.getJWTClaimsSet().getSubject());
         System.out.println(jwtDeparsed.getJWTClaimsSet().getAudience().size());
         System.out.println(jwtDeparsed.getJWTClaimsSet().getExpirationTime());

@@ -2,7 +2,6 @@ package eu.europa.ec.dgc.validation.service;
 
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
-import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
@@ -13,30 +12,20 @@ import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.service.impl.FixAccessTokenKeyProvider;
-import eu.europa.ec.dgc.validation.service.impl.MemoryTokenBlackListService;
-import eu.europa.ec.dgc.validation.service.impl.MemoryValidationStoreService;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwt;
-
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonProperty.Access;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.joda.time.DateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -55,55 +44,80 @@ public class ValidationService {
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
 
-    public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact)
-    {
-        if (accessTokenCompact!=null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
-           String plainToken= accessTokenCompact.substring(TOKEN_PREFIX.length());
-           Jwt token = accessTokenParser.extractPayload(plainToken);
+    /**
+     * validate Access Token.
+     * @param audience audience
+     * @param subject subject
+     * @param accessTokenCompact accessTokenCompact
+     * @return payload
+     */
+    public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact) {
+        if (accessTokenCompact != null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
+            String plainToken = accessTokenCompact.substring(TOKEN_PREFIX.length());
+            Jwt token = accessTokenParser.extractPayload(plainToken);
 
-           String kid = (String)token.getHeader().get("kid");
+            String kid = (String) token.getHeader().get("kid");
 
-           if(kid == null)
+            if (kid == null) {
+                log.debug("kid missing");
                 return null;
+            }
 
-           String alg = (String)token.getHeader().get("alg");
+            String alg = (String) token.getHeader().get("alg");
 
-           switch(alg)
-           {
-               case "RS256":{}
-                break;
-               case "ES256":{}
-                break;
-               case "PS256":{}
-                break;
-               default:
+            switch (alg) {
+                case "RS256":
+                case "ES256":
+                case "PS256":
+                    break;
+                default: {
+                    log.debug("wrong algorithm");
+                    return null;
+                }
+            }
+
+            Claims claims = (Claims) token.getBody();
+
+            if (claims.containsKey("exp")
+                && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
+                log.debug("expired");
                 return null;
-           }
+            }
 
-           Claims claims = (Claims)token.getBody();
-      
-           if(claims.containsKey("exp") &&  claims.getExpiration().toInstant().getEpochSecond()<Instant.now().getEpochSecond())
-             return null;
-           
-           if(claims.containsKey("iat") &&  claims.getIssuedAt().toInstant().getEpochSecond()>Instant.now().getEpochSecond())
-             return null;
+            if (claims.containsKey("iat")
+                && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
+                log.debug("iat in the future");
+                return null;
+            }
 
-           if(claims.containsKey("aud") &&  !claims.getAudience().equals(audience))
-             return null;
+            if (claims.containsKey("aud") && !claims.getAudience().equals(audience)) {
+                log.debug("wrong audience");
+                return null;
+            }
 
-           if(claims.containsKey("sub") &&  !claims.getSubject().equals(subject))
-             return null;
+            if (claims.containsKey("sub") && !claims.getSubject().equals(subject)) {
+                log.debug("subject wrong");
+                return null;
+            }
 
-           try {
-            AccessTokenPayload accessToken = accessTokenParser.parseToken(plainToken, accessTokenKeyProvider.getPublicKey(kid)); 
-            return accessToken;
-           } catch (Exception e) {
-               return null;
-           }    
+            try {
+                AccessTokenPayload accessToken = accessTokenParser.parseToken(
+                    plainToken, accessTokenKeyProvider.getPublicKey(kid));
+                return accessToken;
+            } catch (Exception e) {
+                log.debug("token not correctly signed");
+                return null;
+            }
         }
         return null;
     }
 
+    /**
+     * init validation.
+     * @param validationInitRequest validationInitRequest
+     * @param subject subject random string (uuid)
+     * @return ValidationInitResponse
+     */
     public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
         validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.OPEN);
@@ -111,96 +125,112 @@ public class ValidationService {
         validationInquiry.setPublicKey(validationInitRequest.getPubKey());
         validationInquiry.setKeyType(validationInitRequest.getKeyType());
         validationInquiry.setCallbackUrl(validationInitRequest.getCallback());
-        if(validationInitRequest.getNonce()!=null)
-          validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
-        long timeNow = Instant.now().getEpochSecond();
-        long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
+        if (validationInitRequest.getNonce() != null) {
+            validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
+        }
+        long expirationTime = Instant.now().plusSeconds(dgcConfigProperties.getValidationExpire()).getEpochSecond();
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
 
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(subject);
-        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl()+"/validate");
+        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate/" + subject);
 
         return validationInitResponse;
     }
 
-    private boolean checkMandatoryFields(AccessTokenPayload accessToken)
-    {
-        AccessTokenType tokenType= AccessTokenType.getTokenForInt(accessToken.getType());
+    private boolean checkMandatoryFields(AccessTokenPayload accessToken) {
+        AccessTokenType tokenType = AccessTokenType.getTokenForInt(accessToken.getType());
 
-        if(accessToken.getConditions()==null)
+        if (accessToken.getConditions() == null) {
             return false;
+        }
 
         AccessTokenConditions conditions = accessToken.getConditions();
 
-        if(conditions.getValidFrom()==null || conditions.getDob()==null|| conditions.getValidTo()==null|| conditions.getLang()==null || conditions.getType()==null)
+        if (conditions.getValidFrom() == null || conditions.getDob() == null
+            || conditions.getValidTo() == null || conditions.getLang() == null || conditions.getType() == null) {
             return false;
+        }
 
-        if(tokenType == AccessTokenType.Structure && conditions.getHash()==null)
+        if (tokenType == AccessTokenType.Structure && conditions.getHash() == null) {
             return false;
-         
-        if(tokenType.intValue()>AccessTokenType.Structure.intValue())
-        {
-            if(conditions.getFnt()==null ||
-               conditions.getGnt()==null||
-               conditions.getValidationClock()==null)
-                return false;
+        }
 
-            if(tokenType == AccessTokenType.Full && (
-                conditions.getRoa() == null ||
-                conditions.getRod() == null ||
-                conditions.getCoa() == null ||
-                conditions.getCod() == null))
+        if (tokenType.intValue() > AccessTokenType.Structure.intValue()) {
+            if (conditions.getFnt() == null
+                || conditions.getGnt() == null
+                || conditions.getValidationClock() == null) {
                 return false;
+            }
+
+            if (tokenType == AccessTokenType.Full && (
+                conditions.getRoa() == null
+                    || conditions.getRod() == null
+                    || conditions.getCoa() == null
+                    || conditions.getCod() == null)) {
+                return false;
+            }
         }
 
         return true;
     }
 
+    /**
+     * validate.
+     * @param dccValidationRequest dccValidationRequest
+     * @param accessToken accessToken
+     * @return token
+     */
     public String validate(DccValidationRequest dccValidationRequest, AccessTokenPayload accessToken) {
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
         String resultToken;
         ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
-        if (validationInquiry!=null) {
+        if (validationInquiry != null) {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
                 throw new DccException("token identifier jti already used", HttpStatus.GONE.value());
             }
 
-            if(!checkMandatoryFields(accessToken))
-                throw new DccException("Validation Conditions missing or not properly set",HttpStatus.BAD_REQUEST.value());
+            if (!checkMandatoryFields(accessToken)) {
+                throw new DccException("Validation Conditions missing or not properly set",
+                    HttpStatus.BAD_REQUEST.value());
+            }
 
             if (!checkSignature(dccValidationRequest.getSigAlg(),
-                                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
-                                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
-                                validationInquiry.getPublicKey())) {
+                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getDcc()),
+                org.bouncycastle.util.encoders.Base64.decode(dccValidationRequest.getSig()),
+                validationInquiry.getPublicKey())) {
                 throw new DccException("invalid signature", HttpStatus.UNPROCESSABLE_ENTITY.value());
             }
             String dcc = decodeDcc(dccValidationRequest, validationInquiry);
 
-          
-            List<ValidationStatusResponse.Result> results = dccValidator.validate(dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()));
-            resultToken = resultTokenBuilder.build(results,accessToken.getSub(),
-                                                           dgcConfigProperties.getServiceUrl(), 
-                                                           keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                                                           dccValidationRequest.getKid());
+
+            List<ValidationStatusResponse.Result> results = dccValidator.validate(
+                dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()), false);
+            resultToken = resultTokenBuilder.build(results, accessToken.getSub(),
+                dgcConfigProperties.getServiceUrl(),
+                keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
+                keyProvider.getKid(keyProvider.getActiveSignKey()));
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
         } else {
-            resultToken  = resultTokenBuilder.build(null,accessToken.getSub(),dgcConfigProperties.getServiceUrl(),keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),dccValidationRequest.getKid());;
+            resultToken = resultTokenBuilder.build(null, accessToken.getSub(), dgcConfigProperties.getServiceUrl(),
+                keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
+                keyProvider.getKid(keyProvider.getActiveSignKey()));
         }
         return resultToken;
     }
 
-    private boolean checkSignature(String sigAlg,byte[] data, byte[] signature, String publicKeyBase64) {
+    private boolean checkSignature(String sigAlg, byte[] data, byte[] signature, String publicKeyBase64) {
         try {
-            if(!sigAlg.contains("ECDSA") && !sigAlg.contains("RSA"))
+            if (!sigAlg.contains("ECDSA") && !sigAlg.contains("RSA")) {
                 return false;
+            }
 
-            sigAlg = sigAlg.contains("ECDSA")?"EC":"RSA";
+            sigAlg = sigAlg.contains("ECDSA") ? "EC" : "RSA";
 
             byte[] keyBytes = Base64.getDecoder().decode(cleanKeyString(publicKeyBase64));
             X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
@@ -217,8 +247,8 @@ public class ValidationService {
         encryptedData.setDataEncrypted(Base64.getDecoder().decode(dccValidationRequest.getDcc()));
         encryptedData.setEncKey(Base64.getDecoder().decode(dccValidationRequest.getEncKey()));
         String dcc = new String(dccCryptService.decryptData(encryptedData,
-                keyProvider.receivePrivateKey(keyProvider.getKeyName( dccValidationRequest.getKid())),
-                dccValidationRequest.getEncScheme(),validationInquiry.getNonce()),StandardCharsets.UTF_8);
+            keyProvider.receivePrivateKey(keyProvider.getKeyName(dccValidationRequest.getKid())),
+            dccValidationRequest.getEncScheme(), validationInquiry.getNonce()), StandardCharsets.UTF_8);
         return dcc;
     }
 

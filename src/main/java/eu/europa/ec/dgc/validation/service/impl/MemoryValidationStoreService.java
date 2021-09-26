@@ -1,9 +1,8 @@
 package eu.europa.ec.dgc.validation.service.impl;
 
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
-import java.util.HashMap;
-
 import eu.europa.ec.dgc.validation.service.ValidationStoreService;
+import java.util.HashMap;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
@@ -14,11 +13,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Profile("!redis")
 public class MemoryValidationStoreService implements ValidationStoreService {
-    private HashMap<String,ValidationInquiry> validationStore = new HashMap<>();
+    private HashMap<String, ValidationInquiry> validationStore = new HashMap<>();
 
     @Override
     public void storeValidation(ValidationInquiry validationInquiry) {
-        validationStore.put(validationInquiry.getSubject(),validationInquiry);
+        validationStore.put(validationInquiry.getSubject(), validationInquiry);
     }
 
     @Override
@@ -28,6 +27,6 @@ public class MemoryValidationStoreService implements ValidationStoreService {
 
     @Override
     public void updateValidation(ValidationInquiry validationInquiry) {
-        validationStore.put(validationInquiry.getSubject(),validationInquiry);
+        validationStore.put(validationInquiry.getSubject(), validationInquiry);
     }
 }
