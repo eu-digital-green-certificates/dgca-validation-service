@@ -73,9 +73,8 @@ public class ValidationService {
                 default:
                     log.warn("revoke access token: unsupported algorithm");
                     return null;
-                }
             }
-
+            
             Claims claims = (Claims) token.getBody();
 
             if (claims.containsKey("exp")
