@@ -1,10 +1,17 @@
 package eu.europa.ec.dgc.validation.restapi.controller;
 
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
+import eu.europa.ec.dgc.validation.restapi.dto.BusinessRuleListItemDto;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationDevRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.ValueSetListItemDto;
+import eu.europa.ec.dgc.validation.service.BusinessRuleService;
 import eu.europa.ec.dgc.validation.service.DccValidator;
+import eu.europa.ec.dgc.validation.service.ValueSetService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.util.List;
@@ -13,6 +20,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +31,10 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 @Profile("devvalidate")
 public class ValidationDevTestController {
+
     private final DccValidator dccValidator;
+    private final BusinessRuleService businessRuleService;
+    private final ValueSetService valueSetService;
 
     /**
      * dev Validate.
@@ -50,5 +61,38 @@ public class ValidationDevTestController {
         return ResponseEntity.ok(dccValidator.validate(validationDevRequest.getDcc(),
             validationDevRequest.getAccessTokenPayload().getConditions(),
             AccessTokenType.getTokenForInt(validationDevRequest.getAccessTokenPayload().getType()), false));
+    }
+
+
+    /**
+     * Http Method for getting the business rules list.
+     */
+    @GetMapping(path = "/devrules", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(
+        summary = "Gets the a list of all business rule ids country codes and hash values.",
+        description = "This method returns a list containing the ids, country codes and hash values of all business "
+            + "rules. The hash value can be used to check, if a business rule has changed and needs to be updated. "
+            + "The hash value and country code can also be used to download a specific business rule afterwards.",
+        tags = {"Business Rules"},
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "Returns a list of all business rule ids country codes and hash values.",
+                content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    array = @ArraySchema(schema = @Schema(implementation = BusinessRuleListItemDto.class))))
+        }
+    )
+    public ResponseEntity<List<BusinessRuleListItemDto>> getRules() {
+        return ResponseEntity.ok(businessRuleService.getBusinessRulesList());
+    }
+
+
+    /**
+     * Http Method for getting the value set list.
+     */
+    @GetMapping(path = "devvaluesets", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<ValueSetListItemDto>> getValueSetList() {
+        return ResponseEntity.ok(valueSetService.getValueSetsList());
     }
 }
