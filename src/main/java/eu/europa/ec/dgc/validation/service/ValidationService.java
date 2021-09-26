@@ -73,6 +73,7 @@ public class ValidationService {
                 default:
                     log.warn("revoke access token: unsupported algorithm");
                     return null;
+                }
             }
 
             Claims claims = (Claims) token.getBody();
@@ -97,6 +98,16 @@ public class ValidationService {
 
             if (claims.containsKey("sub") && !subject.equals(claims.getSubject())) {
                 log.warn("revoke access token: sub mismatch");
+                return null;
+            }
+
+            if (claims.containsKey("aud") && !claims.getAudience().equals(audience)) {
+                log.debug("wrong audience");
+                return null;
+            }
+
+            if (claims.containsKey("sub") && !claims.getSubject().equals(subject)) {
+                log.debug("subject wrong");
                 return null;
             }
 
@@ -128,15 +139,14 @@ public class ValidationService {
         if (validationInitRequest.getNonce() != null) {
             validationInquiry.setNonce(Base64.getDecoder().decode(validationInitRequest.getNonce()));
         }
-        long timeNow = Instant.now().getEpochSecond();
-        long expirationTime = timeNow + dgcConfigProperties.getValidationExpire().get(ChronoUnit.SECONDS);
+        long expirationTime = Instant.now().plusSeconds(dgcConfigProperties.getValidationExpire()).getEpochSecond();
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
 
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(subject);
-        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate");
+        validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate/" + subject);
 
         return validationInitResponse;
     }
