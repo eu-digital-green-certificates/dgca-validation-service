@@ -86,7 +86,7 @@ public class BusinessRulesDownloadServicePseImpl implements BusinessRulesDownloa
 
         List<BusinessRuleItem> ruleItems = new ArrayList<>();
 
-        for(RulesResponseDto ruleIndex : rulesList) {
+        for (RulesResponseDto ruleIndex : rulesList) {
             BusinessRuleItem item = getRuleData(ruleIndex);
             if (item != null) {
                 ruleItems.add(item);

@@ -52,6 +52,7 @@ public interface BusinessRulesRestClient {
      * @return Raw data of the rule
      */
     @GetMapping(value = "/rules/{country}/{hash}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<String> getBusinessRulesItem(@PathVariable("country") String country, @PathVariable("hash") String hash);
+    ResponseEntity<String> getBusinessRulesItem(@PathVariable("country") String country, 
+                                                @PathVariable("hash") String hash);
 }
 

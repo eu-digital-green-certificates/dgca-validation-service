@@ -32,9 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Profile("devvalidate")
 public class ValidationDevTestController {
 
-    final private DccValidator dccValidator;
-    final private BusinessRuleService businessRuleService;
-    final private ValueSetService valueSetService;
+    private final DccValidator dccValidator;
+    private final BusinessRuleService businessRuleService;
+    private final ValueSetService valueSetService;
 
     /**
      * dev Validate.

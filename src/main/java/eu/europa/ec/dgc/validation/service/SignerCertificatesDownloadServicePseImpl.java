@@ -86,7 +86,7 @@ public class SignerCertificatesDownloadServicePseImpl implements SignerCertifica
 
         List<TrustListItem> items = new ArrayList<>();
         ResponseEntity<String> responseEntity;
-        String resumeToken ="";
+        String resumeToken = "";
 
         do {
             try {
@@ -97,7 +97,8 @@ public class SignerCertificatesDownloadServicePseImpl implements SignerCertifica
                 return new ArrayList<>();
             }
 
-            if (responseEntity.getStatusCode() != HttpStatus.OK &&
+            if (responseEntity.getStatusCode() != HttpStatus.OK 
+                &&
                 responseEntity.getStatusCode() != HttpStatus.NO_CONTENT) {
                 log.error("Download of certificate failed. Service responded with status code: {}",
                     responseEntity.getStatusCode());
@@ -115,7 +116,7 @@ public class SignerCertificatesDownloadServicePseImpl implements SignerCertifica
                 trustListItem.setRawData(certificateData);
                 items.add(trustListItem);
             }
-        } while(responseEntity.getStatusCode()== HttpStatus.OK);
+        } while (responseEntity.getStatusCode() == HttpStatus.OK);
 
         return items;
     }

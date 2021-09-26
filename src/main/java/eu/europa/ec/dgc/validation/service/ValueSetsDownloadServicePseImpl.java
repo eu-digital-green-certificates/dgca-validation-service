@@ -86,7 +86,7 @@ public class ValueSetsDownloadServicePseImpl implements ValueSetsDownloadService
 
         List<ValueSetItem> items = new ArrayList<>();
 
-        for(ValueSetResponseDto valueSetIndex : valueSetsList) {
+        for (ValueSetResponseDto valueSetIndex : valueSetsList) {
             ValueSetItem item = getValueSetData(valueSetIndex);
             if (item != null) {
                 items.add(item);
