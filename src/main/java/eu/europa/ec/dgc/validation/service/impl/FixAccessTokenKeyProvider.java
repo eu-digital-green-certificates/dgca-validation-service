@@ -40,7 +40,7 @@ public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
             throw new IllegalArgumentException("please set env variable DGC_ACCESSKEYS for access keys "
                 + "'kid1:publicKey1,kid2:publicKey2'");
         } else {
-           for (String key : keys) {
+            for (String key : keys) {
                 String[] keysSplit = key.split(":");
                 if (keysSplit.length % 2 != 0) {
                     throw new IllegalArgumentException("wrong format for access keys env variable: "
@@ -54,7 +54,7 @@ public class FixAccessTokenKeyProvider implements AccessTokenKeyProvider {
                     publicKeys.put(kid,publicKey);
                     log.info("access key with kid={} was registered",kid);
                 }
-           }
+            }
         }
     }
 
