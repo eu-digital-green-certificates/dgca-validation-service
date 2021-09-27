@@ -21,8 +21,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.bouncycastle.util.encoders.Base64;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -39,6 +41,9 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
      * @throws InterruptedException InterruptedException
      */
     @PostConstruct
+    @Scheduled(fixedDelayString = "${dgc.accessKeysRefresh.timeInterval}")
+    @SchedulerLock(name = "DynamicAccessTokenKeyProvider_refresh", lockAtLeastFor = "PT0S",
+        lockAtMostFor = "${dgc.accessKeysRefresh.lockLimit}")
     public void loadKeys() throws IOException, InterruptedException {
         String decoratorUrl = dgcConfigProperties.getDecoratorUrl();
         log.info("accessing identity document from decorator url: {}", decoratorUrl);

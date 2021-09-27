@@ -39,6 +39,8 @@ public class DgcConfigProperties {
 
     private final GatewayDownload certificatesDownloader = new GatewayDownload();
 
+    private final GatewayDownload accessKeysRefresh = new GatewayDownload();
+
     @Getter
     @Setter
     public static class GatewayDownload {

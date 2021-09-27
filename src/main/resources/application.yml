@@ -64,6 +64,9 @@ dgc:
   activeSignKey: validationservicesignkey
   accessKeys: overwrite_my_by_env
 #  decoratorUrl: https://decorator.server/identity
+  accessKeysRefresh:
+    timeInterval: 86400000
+    lockLimit: 3600000
 
 
 
