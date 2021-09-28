@@ -211,8 +211,8 @@ public class DccValidator {
         ZonedDateTime validTo = ZonedDateTime.parse(accessTokenConditions.getValidTo());
         if (!greenCertificateData.getExpirationTime().isAfter(validTo)) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDONDATE",
-                "Dcc exp date before validTo");
+                ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
+                "Dcc exp date after validTo");
         }
         if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.TEST) {
@@ -220,8 +220,8 @@ public class DccValidator {
             ZonedDateTime dateOfCollection = toZonedDateTimeOrUtcLocal(testStatement.getDateTimeOfCollection());
             if (dateOfCollection != null && !dateOfCollection.isBefore(dateOfCollection)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDONDATE",
-                    "Test collection date after condition validFrom");
+                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
+                    "Test collection date before condition validFrom");
             }
         } else if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.RECOVERY) {
@@ -231,13 +231,13 @@ public class DccValidator {
             ZonedDateTime certValidTo = toZonedDateTimeOrUtcLocal(recoveryStatement.getCertificateValidUntil());
             if (certValidFrom != null && !certValidFrom.isBefore(validFrom)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDONDATE",
-                    "Recovery validFrom after condition validFrom");
+                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
+                    "Recovery validFrom before condition validFrom");
             }
-            if (certValidTo != null && !certValidFrom.isAfter(validTo)) {
+            if (certValidTo != null && !certValidTo.isAfter(validTo)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDONDATE",
-                    "Recovery validTo before condition validTo");
+                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
+                    "Recovery validTo after condition validTo");
             }
         }
     }
