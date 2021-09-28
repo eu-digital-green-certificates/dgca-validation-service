@@ -71,6 +71,7 @@ public class ResultTokenBuilder {
             .setId(UUID.randomUUID().toString())
             .setHeaderParam("alg", "ES256")
             .setSubject(subject)
+            .setIssuer(issuer)
             .setIssuedAt(Date.from(Instant.now()))
             .setExpiration(expiration)
             .signWith(SignatureAlgorithm.ES256, privateKey)
