@@ -59,7 +59,8 @@ public class ResultCallbackService {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(callbackUrl))
                 .header("Content-Type", "application/jwt")
-                .POST(HttpRequest.BodyPublishers.ofString(resultToken))
+                .header("X-Version","1.0")
+                .PUT(HttpRequest.BodyPublishers.ofString(resultToken))
                 .build();
         try {
             HttpResponse<String> response = null;
