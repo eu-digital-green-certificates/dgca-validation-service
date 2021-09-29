@@ -37,13 +37,13 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
 
     /**
      * load keys from identity document of decorator.
+     * The keys will be refreshed every 24h (configuration default).
+     * It is necessary for each node.
      * @throws IOException IOException
      * @throws InterruptedException InterruptedException
      */
     @PostConstruct
     @Scheduled(fixedDelayString = "${dgc.accessKeysRefresh.timeInterval}")
-    @SchedulerLock(name = "DynamicAccessTokenKeyProvider_refresh", lockAtLeastFor = "PT0S",
-        lockAtMostFor = "${dgc.accessKeysRefresh.lockLimit}")
     public void loadKeys() throws IOException, InterruptedException {
         String decoratorUrl = dgcConfigProperties.getDecoratorUrl();
         log.info("accessing identity document from decorator url: {}", decoratorUrl);
