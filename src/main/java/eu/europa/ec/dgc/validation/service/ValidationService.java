@@ -141,7 +141,7 @@ public class ValidationService {
         validationStoreService.storeValidation(validationInquiry);
         
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
-        IdentityResponse response = identityService.getIdentity();
+        IdentityResponse response = identityService.getIdentity(null, null);
         if (signature != null && signature.booleanValue()) {
             PublicKeyJwk result = response.getVerificationMethod().stream()
                                                                 .filter(x -> x.getPublicKeyJwk()
