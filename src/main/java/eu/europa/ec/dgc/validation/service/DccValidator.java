@@ -60,6 +60,7 @@ import kotlin.Triple;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -79,6 +80,7 @@ public class DccValidator {
     private final CertificateUtils certificateUtils;
     private final ValueSetCache valueSetCache;
     private final RulesCache rulesCache;
+    private final ResourceBundleMessageSource resourceBundleMessageSource;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final ZoneId UTC_ZONE_ID = ZoneId.ofOffset("", ZoneOffset.UTC).normalized();
@@ -116,82 +118,87 @@ public class DccValidator {
         List<ValidationStatusResponse.Result> results = new ArrayList<>();
         VerificationResult verificationResult = new VerificationResult();
         String dccPlain = prefixValidationService.decode(dcc, verificationResult);
+        Locale locale;
+        if (accessTokenConditions.getLang() != null && accessTokenConditions.getLang().length() > 0) {
+            locale = Locale.forLanguageTag(accessTokenConditions.getLang());
+        } else {
+            locale = Locale.ENGLISH;
+        }
         if (verificationResult.getContextPrefix() == null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "PREFIX", "No HC1: prefix");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.PREFIX, locale);
             return results;
         }
         byte[] compressedCose = base45Service.decode(dccPlain, verificationResult);
         if (!verificationResult.getBase45Decoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "BASE45", "Wrong Base45 coding");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.BASE45, locale);
             return results;
         }
         byte[] cose = compressorService.decode(compressedCose, verificationResult);
         if (cose == null || !verificationResult.getZlibDecoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "COMPRESSION", "Can not decompress data");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.COMPRESSION, locale);
             return results;
         }
         CoseData coseData = coseService.decode(cose, verificationResult);
         if (coseData == null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "COSE", "Can not decode cose");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.COSE, locale);
             return results;
         }
         if (coseData.getKid() == null) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "KID", "Can not extract kid");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.KID, locale);
             return results;
         }
         schemaValidator.validate(coseData.getCbor(), verificationResult);
         if (!verificationResult.isSchemaValid()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "SCHEMA", "schema invalid");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.SCHEMA, locale);
             return results;
         }
         GreenCertificateData greenCertificateData = cborService.decodeData(coseData.getCbor(), verificationResult);
         if (!verificationResult.getCborDecoded()) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "CBOR", "can not decode cbor");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.CBOR, locale);
             return results;
         }
 
         if (ZonedDateTime.now().isAfter(greenCertificateData.getExpirationTime()) && !ignoreExpire) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "EXPIRED", "Certificate Expired.");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.EXPIRED, locale);
             return results;
         }
 
         if (ZonedDateTime.now().isBefore(greenCertificateData.getIssuedAt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "NOTVALIDYET", "Certificate not yet valid.");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.NOTVALIDYET, locale);
             return results;
         }
 
         if (!Arrays.asList(Locale.getISOCountries()).contains(greenCertificateData.getIssuingCountry())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "UNKNOWNISSUERCOUNTRY",
-                "Issuer Country is unknown.");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.UNKNOWNISSUERCOUNTRY, locale);
             return results;
         }
 
         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
             ResultTypeIdentifier.TechnicalVerification, "STRUCTURE", "OK");
+        if (accessTokenConditions == null) {
+            throw new DccException("Validation Conditions missing", HttpStatus.SC_BAD_REQUEST);
+        }
+
         if (accessTokenType == AccessTokenType.Structure) {
-            if (accessTokenConditions == null) {
-                throw new DccException("Validation Conditions missing", HttpStatus.SC_BAD_REQUEST);
-            }
             if (accessTokenConditions.getHash() == null || accessTokenConditions.getHash().length() == 0) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "HASH",
-                    "dcc hash not provided for check type 0");
+                    ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.HASH, locale);
             } else {
                 try {
                     if (!certificateUtils.calculateHash(dcc.getBytes(StandardCharsets.UTF_8))
                         .equals(accessTokenConditions.getHash())) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                            ResultTypeIdentifier.TechnicalVerification, "HASH", "dcc hash does not match");
+                            ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.HASH_NOT_MATCH, locale);
                     } else {
                         addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                             ResultTypeIdentifier.TechnicalVerification, "HASH", "OK");
@@ -202,19 +209,15 @@ public class DccValidator {
             }
         }
 
-        try {
-            checkExpirationDates(greenCertificateData, accessTokenConditions, results);
-            checkAcceptableCertType(greenCertificateData, accessTokenConditions, results);
-            if (accessTokenType.intValue() > AccessTokenType.Structure.intValue()) {
-                validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results);
-                validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results);
-                if (accessTokenType == AccessTokenType.Full) {
-                    validateRules(greenCertificateData, verificationResult, results, accessTokenConditions,
-                        coseData.getKid(), certLogicEngine, rulesCache, valueSetCache);
-                }
+        checkExpirationDates(greenCertificateData, accessTokenConditions, results, locale);
+        checkAcceptableCertType(greenCertificateData, accessTokenConditions, results, locale);
+        if (accessTokenType.intValue() > AccessTokenType.Structure.intValue()) {
+            validateGreenCertificateNameDob(greenCertificateData, accessTokenConditions, results, locale);
+            validateCryptographic(cose, coseData.getKid(), accessTokenConditions, verificationResult, results, locale);
+            if (accessTokenType == AccessTokenType.Full) {
+                validateRules(greenCertificateData, verificationResult, results, accessTokenConditions,
+                    coseData.getKid(), rulesCache, valueSetCache, locale);
             }
-        } catch (NullPointerException e) {
-            throw new DccException("Validation Conditions missing", HttpStatus.SC_BAD_REQUEST);
         }
 
         return results;
@@ -222,13 +225,17 @@ public class DccValidator {
 
     private void checkExpirationDates(GreenCertificateData greenCertificateData,
                                       AccessTokenConditions accessTokenConditions,
-                                      List<ValidationStatusResponse.Result> results) {
+                                      List<ValidationStatusResponse.Result> results, Locale locale) {
         ZonedDateTime validFrom = ZonedDateTime.parse(accessTokenConditions.getValidFrom());
         ZonedDateTime validTo = ZonedDateTime.parse(accessTokenConditions.getValidTo());
         if (!greenCertificateData.getExpirationTime().isAfter(validTo)) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+<<<<<<< Updated upstream
                 ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
                 "Dcc exp date after validTo");
+=======
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.NOTYETVALIDONDATE_BEFORE, locale);
+>>>>>>> Stashed changes
         }
         if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.TEST) {
@@ -236,8 +243,12 @@ public class DccValidator {
             ZonedDateTime dateOfCollection = toZonedDateTimeOrUtcLocal(testStatement.getDateTimeOfCollection());
             if (dateOfCollection != null && !dateOfCollection.isBefore(dateOfCollection)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+<<<<<<< Updated upstream
                     ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
                     "Test collection date before condition validFrom");
+=======
+                    ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.EXPIREDONDATE_AFTER, locale);
+>>>>>>> Stashed changes
             }
         } else if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.RECOVERY) {
@@ -247,13 +258,21 @@ public class DccValidator {
             ZonedDateTime certValidTo = toZonedDateTimeOrUtcLocal(recoveryStatement.getCertificateValidUntil());
             if (certValidFrom != null && !certValidFrom.isBefore(validFrom)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+<<<<<<< Updated upstream
                     ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
                     "Recovery validFrom before condition validFrom");
+=======
+                    ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.NOTYETVALIDONDATE_AFTER, locale);
+>>>>>>> Stashed changes
             }
             if (certValidTo != null && !certValidTo.isAfter(validTo)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
+<<<<<<< Updated upstream
                     ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
                     "Recovery validTo after condition validTo");
+=======
+                    ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.EXPIREDONDATE_BEFORE, locale);
+>>>>>>> Stashed changes
             }
         }
     }
@@ -283,18 +302,16 @@ public class DccValidator {
      * @param results results
      * @param accessTokenConditions accessTokenConditions
      * @param kid kid
-     * @param certLogicEngine certLogicEngine
      * @param rulesCache rulesCache
      * @param valueSetCache valueSetCache
      */
-    public static void validateRules(GreenCertificateData greenCertificateData,
+    void validateRules(GreenCertificateData greenCertificateData,
                                      VerificationResult verificationResult,
                                      List<ValidationStatusResponse.Result> results,
                                      AccessTokenConditions accessTokenConditions,
                                      byte[] kid,
-                                     CertLogicEngine certLogicEngine,
                                      RulesCache rulesCache,
-                                     ValueSetCache valueSetCache) {
+                                     ValueSetCache valueSetCache, Locale locale) {
         log.debug("Start BusinessRule Evaluation");
         ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
 
@@ -438,7 +455,7 @@ public class DccValidator {
                 }
                 StringBuilder details = new StringBuilder();
                 details.append(validationResult.getRule().getIdentifier()).append(' ');
-                details.append(validationResult.getRule().getDescriptionFor("en")).append(' ');
+                details.append(validationResult.getRule().getDescriptionFor(locale.getLanguage())).append(' ');
                 if (validationResult.getCurrent() != null && validationResult.getCurrent().length() > 0) {
                     details.append(validationResult.getCurrent()).append(' ');
                 }
@@ -470,7 +487,7 @@ public class DccValidator {
     private void validateCryptographic(byte[] cose, byte[] kid,
                                        AccessTokenConditions accessTokenConditions,
                                        VerificationResult verificationResult,
-                                       List<ValidationStatusResponse.Result> results) {
+                                       List<ValidationStatusResponse.Result> results, Locale locale) {
         ZonedDateTime validationClock = ZonedDateTime.parse(accessTokenConditions.getValidationClock());
         String kidBase64 = Base64.getEncoder().encodeToString(kid);
         List<Certificate> certificates = signerInformationService.getCertificates(kidBase64);
@@ -485,8 +502,7 @@ public class DccValidator {
                         : null;
                     if (expirationTime != null && validationClock.isAfter(expirationTime)) {
                         addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                            ResultTypeIdentifier.TechnicalVerification, "EXPIREDONCLOCK",
-                            "certificate expired for validation clock");
+                            ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.EXPIREDONCLOCK, locale);
                     }
                     signValidated = true;
                     break;
@@ -494,42 +510,42 @@ public class DccValidator {
             }
             if (!signValidated) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "SIGNATURE", "signature invalid");
+                    ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.SIGNATURE, locale);
             } else {
                 addResult(results, ValidationStatusResponse.Result.ResultType.OK,
                     ResultTypeIdentifier.TechnicalVerification, "SIGNATURE", "signature valid");
             }
         } else {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "KID", "unknown dcc signing kid");
+                ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.KID_UNKNOWN, locale);
         }
     }
 
     private void validateGreenCertificateNameDob(GreenCertificateData greenCertificateData,
                                                  AccessTokenConditions accessTokenConditions,
-                                                 List<ValidationStatusResponse.Result> results) {
+                                                 List<ValidationStatusResponse.Result> results, Locale locale) {
         if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedFamilyName() == null
             || !greenCertificateData.getGreenCertificate().getPerson()
                 .getStandardisedFamilyName().equals(accessTokenConditions.getFnt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "FNTNOMATCH", "family name does not match");
+                ResultTypeIdentifier.TechnicalVerification,  DccValidationMessage.FNTNOMATCH, locale);
         }
         if (greenCertificateData.getGreenCertificate().getPerson().getStandardisedGivenName() == null
             || !greenCertificateData.getGreenCertificate().getPerson()
                 .getStandardisedGivenName().equals(accessTokenConditions.getGnt())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "GNTNOTMATCH", "given name does not match");
+                ResultTypeIdentifier.TechnicalVerification,  DccValidationMessage.GNTNOTMATCH, locale);
         }
         if (greenCertificateData.getGreenCertificate().getDateOfBirth() == null
             ||  !greenCertificateData.getGreenCertificate().getDateOfBirth().equals(accessTokenConditions.getDob())) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "DOBNOMATCH", "data of birth does not match");
+                ResultTypeIdentifier.TechnicalVerification,  DccValidationMessage.DOBNOMATCH, locale);
         }
     }
 
     private void checkAcceptableCertType(GreenCertificateData greenCertificateData,
                                          AccessTokenConditions accessTokenConditions,
-                                         List<ValidationStatusResponse.Result> results) {
+                                         List<ValidationStatusResponse.Result> results, Locale locale) {
         if (accessTokenConditions.getType() != null) {
             boolean accepted = false;
             for (String acceptableTypeSymbol : accessTokenConditions.getType()) {
@@ -563,7 +579,7 @@ public class DccValidator {
             if (!accepted) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ResultTypeIdentifier.TechnicalVerification,
-                    "WRONGCERT", "required acceptable cert type not provided");
+                        DccValidationMessage.WRONGCERT, locale);
             }
         }
     }
@@ -591,7 +607,7 @@ public class DccValidator {
         return pcrTest;
     }
 
-    private static void addResult(List<ValidationStatusResponse.Result> results,
+    private void addResult(List<ValidationStatusResponse.Result> results,
                                   ValidationStatusResponse.Result.ResultType resultType,
                                   ResultTypeIdentifier type, String identifier, String details) {
         ValidationStatusResponse.Result result = new ValidationStatusResponse.Result();
@@ -600,5 +616,12 @@ public class DccValidator {
         result.setIdentifier(identifier);
         result.setDetails(details);
         results.add(result);
+    }
+
+    private void addResult(List<ValidationStatusResponse.Result> results,
+                                  ValidationStatusResponse.Result.ResultType resultType,
+                                  ResultTypeIdentifier type, DccValidationMessage dccValidationMessage, Locale locale) {
+        addResult(results, resultType, type, dccValidationMessage.identifier(),
+                resourceBundleMessageSource.getMessage(dccValidationMessage.name(), null, locale));
     }
 }
