@@ -419,7 +419,7 @@ class DccValidatorTest {
 
         RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
-        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+        dccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], rulesCache, cache, Locale.ENGLISH);
 
         Assert.isTrue(results.size() == 1);
         Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
