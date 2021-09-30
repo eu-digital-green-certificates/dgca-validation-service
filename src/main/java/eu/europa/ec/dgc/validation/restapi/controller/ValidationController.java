@@ -56,7 +56,11 @@ public class ValidationController {
                                                                  @Valid @RequestBody ValidationInitRequest
                                                                      validationInitRequest,
                                                                  @RequestHeader("Authorization") String accessToken,
-                                                                 @RequestHeader("X-Version") String version) {
+                                                                 @RequestHeader("X-Version") String version,
+                                                                 @RequestHeader(value = "X-Crypto-Enc",
+                                                                                required = false) Boolean enc,
+                                                                 @RequestHeader(value = "X-Crypto-Sig",
+                                                                                required = false) Boolean sig) {
 
         AccessTokenPayload accessTokenPayload = validationService.validateAccessToken(
             dgcConfigProperties.getServiceUrl() + "/initialize/" + subject, subject, accessToken);
@@ -66,7 +70,7 @@ public class ValidationController {
         }
 
         return new ResponseEntity<ValidationInitResponse>(
-            validationService.initValidation(validationInitRequest, subject),
+            validationService.initValidation(validationInitRequest, subject,enc,sig),
             HttpStatus.CREATED);
     }
 
