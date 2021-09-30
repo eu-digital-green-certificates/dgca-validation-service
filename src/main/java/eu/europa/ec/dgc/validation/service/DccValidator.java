@@ -50,11 +50,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import kotlin.Triple;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpStatus;
@@ -80,6 +82,20 @@ public class DccValidator {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final ZoneId UTC_ZONE_ID = ZoneId.ofOffset("", ZoneOffset.UTC).normalized();
+
+    /**
+     * Tries to convert String into a version based on pattern majorVersion.minorVersion.patchVersion.
+     */
+    private static Triple<Integer, Integer, Integer> toVersion(String s) {
+        try {
+            String[] versionPieces = s.split("\\.");
+            return new Triple<Integer,Integer,Integer>(Integer.valueOf(versionPieces[0]), 
+                                                       Integer.valueOf(versionPieces[1]), 
+                                                       Integer.valueOf(versionPieces[2]));
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     @PostConstruct
     public void initMapper() {
@@ -211,8 +227,8 @@ public class DccValidator {
         ZonedDateTime validTo = ZonedDateTime.parse(accessTokenConditions.getValidTo());
         if (!greenCertificateData.getExpirationTime().isAfter(validTo)) {
             addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDONDATE",
-                "Dcc exp date before validTo");
+                ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
+                "Dcc exp date after validTo");
         }
         if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.TEST) {
@@ -220,8 +236,8 @@ public class DccValidator {
             ZonedDateTime dateOfCollection = toZonedDateTimeOrUtcLocal(testStatement.getDateTimeOfCollection());
             if (dateOfCollection != null && !dateOfCollection.isBefore(dateOfCollection)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDONDATE",
-                    "Test collection date after condition validFrom");
+                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
+                    "Test collection date before condition validFrom");
             }
         } else if (greenCertificateData.getGreenCertificate().getType()
             == dgca.verifier.app.decoder.model.CertificateType.RECOVERY) {
@@ -231,13 +247,13 @@ public class DccValidator {
             ZonedDateTime certValidTo = toZonedDateTimeOrUtcLocal(recoveryStatement.getCertificateValidUntil());
             if (certValidFrom != null && !certValidFrom.isBefore(validFrom)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDONDATE",
-                    "Recovery validFrom after condition validFrom");
+                    ResultTypeIdentifier.TechnicalVerification, "NOTYETVALIDATDATE",
+                    "Recovery validFrom before condition validFrom");
             }
-            if (certValidTo != null && !certValidFrom.isAfter(validTo)) {
+            if (certValidTo != null && !certValidTo.isAfter(validTo)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
-                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDONDATE",
-                    "Recovery validTo before condition validTo");
+                    ResultTypeIdentifier.TechnicalVerification, "EXPIREDATDATE",
+                    "Recovery validTo after condition validTo");
             }
         }
     }
@@ -323,7 +339,63 @@ public class DccValidator {
             )
             .map(t -> t)
             .collect(Collectors.toList());
-        ;
+        Hashtable<String,Triple<Integer,Integer,Integer>> identifierVersions = 
+                                                                new Hashtable<String,Triple<Integer,Integer,Integer>>();
+        Hashtable<String,Rule> ruleVersions = new Hashtable<String,Rule>();
+        ArrayList<Rule> rulesOut = new ArrayList<Rule>();
+        for (Rule rule : rules) {
+            if (!identifierVersions.containsKey(rule.getIdentifier())) {
+                identifierVersions.put(rule.getIdentifier(), toVersion(rule.getVersion()));
+                ruleVersions.put(rule.getIdentifier(), rule);
+            }
+            var currVersion = toVersion(rule.getVersion());
+            var prevVersion = identifierVersions.get(rule.getIdentifier());
+
+            if (currVersion != null && prevVersion != null) {
+                if (currVersion.component1() < prevVersion.component1()) {
+                    rulesOut.add(rule); 
+                    continue;   
+                }
+
+                if (currVersion.component1() > prevVersion.component1()) {
+                    rulesOut.add(ruleVersions.get(rule.getIdentifier()));
+                    ruleVersions.put(rule.getIdentifier(), rule);
+                    identifierVersions.put(rule.getIdentifier(), currVersion);
+                    continue;
+                }
+
+                if (currVersion.component1() == prevVersion.component1()) {
+                    if (currVersion.component2() < prevVersion.component2()) {
+                        rulesOut.add(rule);
+                        continue;   
+                    }
+
+                    if (currVersion.component2() > prevVersion.component2()) {
+                        rulesOut.add(ruleVersions.get(rule.getIdentifier()));
+                        ruleVersions.put(rule.getIdentifier(), rule);
+                        identifierVersions.put(rule.getIdentifier(), currVersion);
+                        continue;
+                    }
+
+                    if (currVersion.component2() == prevVersion.component2()) {
+                        if (currVersion.component3() < prevVersion.component3()) {
+                            rulesOut.add(rule);
+                            continue;   
+                        }
+
+                        if (currVersion.component3() > prevVersion.component3()) {
+                            rulesOut.add(ruleVersions.get(rule.getIdentifier()));
+                            ruleVersions.put(rule.getIdentifier(), rule);
+                            identifierVersions.put(rule.getIdentifier(), currVersion);
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+
+        rules.removeAll(rulesOut);
+            
         log.debug("Matching Rules: " + rules.size());
         if (rules != null && rules.size() > 0) {
             String kidBase64 = Base64.getEncoder().encodeToString(kid);

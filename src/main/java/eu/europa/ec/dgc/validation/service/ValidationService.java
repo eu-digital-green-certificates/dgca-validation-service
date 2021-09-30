@@ -1,5 +1,6 @@
 package eu.europa.ec.dgc.validation.service;
 
+import com.nimbusds.jose.jwk.KeyUse;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
@@ -8,6 +9,8 @@ import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenConditions;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenPayload;
 import eu.europa.ec.dgc.validation.restapi.dto.AccessTokenType;
 import eu.europa.ec.dgc.validation.restapi.dto.DccValidationRequest;
+import eu.europa.ec.dgc.validation.restapi.dto.IdentityResponse;
+import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJwk;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
@@ -43,6 +46,7 @@ public class ValidationService {
     private final DccSign dccSign;
     private final FixAccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
+    private final IdentityService identityService;
 
     /**
      * validate Access Token.
@@ -54,6 +58,7 @@ public class ValidationService {
     public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact) {
         if (accessTokenCompact != null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
             String plainToken = accessTokenCompact.substring(TOKEN_PREFIX.length());
+            
             Jwt token = accessTokenParser.extractPayload(plainToken);
 
             String kid = (String) token.getHeader().get("kid");
@@ -118,7 +123,10 @@ public class ValidationService {
      * @param subject subject random string (uuid)
      * @return ValidationInitResponse
      */
-    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, String subject) {
+    public ValidationInitResponse initValidation(ValidationInitRequest validationInitRequest, 
+                                                 String subject, 
+                                                 Boolean encryption, 
+                                                 Boolean signature) {
         ValidationInquiry validationInquiry = new ValidationInquiry();
         validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.OPEN);
         validationInquiry.setSubject(subject);
@@ -131,8 +139,39 @@ public class ValidationService {
         long expirationTime = Instant.now().plusSeconds(dgcConfigProperties.getValidationExpire()).getEpochSecond();
         validationInquiry.setExp(expirationTime);
         validationStoreService.storeValidation(validationInquiry);
-
+        
         ValidationInitResponse validationInitResponse = new ValidationInitResponse();
+        IdentityResponse response = identityService.getIdentity();
+        if (signature != null && signature.booleanValue()) {
+            PublicKeyJwk result = response.getVerificationMethod().stream()
+                                                                .filter(x -> x.getPublicKeyJwk()
+                                                                              .getUse()
+                                                                              .equals(KeyUse.SIGNATURE.toString()) 
+                                                                             && 
+                                                                             x.getId()
+                                                                              .contains(dgcConfigProperties
+                                                                                            .getActiveSignKey()))
+                                                                .findFirst()
+                                                                .get()
+                                                                .getPublicKeyJwk();
+            if (result != null) {
+                validationInitResponse.setSigKey(result);
+            }
+        }
+
+        if (encryption != null && encryption.booleanValue()) {
+            PublicKeyJwk result = response.getVerificationMethod().stream()
+                                                                .filter(x ->  x.getPublicKeyJwk()
+                                                                               .getUse()
+                                                                               .equals(KeyUse.ENCRYPTION.toString()))
+                                                                .findAny()
+                                                                .get()
+                                                                .getPublicKeyJwk();
+            if (result != null) {
+                validationInitResponse.setEncKey(result);
+            }
+        }
+   
         validationInitResponse.setExp(expirationTime);
         validationInitResponse.setSubject(subject);
         validationInitResponse.setAud(dgcConfigProperties.getServiceUrl() + "/validate/" + subject);

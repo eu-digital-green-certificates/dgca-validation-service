@@ -1,5 +1,6 @@
 package eu.europa.ec.dgc.validation.restapi.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -20,4 +21,10 @@ public class ValidationInitResponse {
      */
     @NotNull
     private String aud;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private PublicKeyJwk encKey;
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private PublicKeyJwk sigKey;
 }

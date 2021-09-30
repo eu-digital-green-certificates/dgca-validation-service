@@ -1,15 +1,27 @@
 package eu.europa.ec.dgc.validation.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import dgca.verifier.app.decoder.base45.Base45Service;
 import dgca.verifier.app.decoder.base45.DefaultBase45Service;
+import dgca.verifier.app.decoder.cbor.CborService;
+import dgca.verifier.app.decoder.cbor.DefaultCborService;
 import dgca.verifier.app.decoder.cbor.GreenCertificateData;
+import dgca.verifier.app.decoder.compression.CompressorService;
+import dgca.verifier.app.decoder.compression.DefaultCompressorService;
+import dgca.verifier.app.decoder.cose.CoseService;
+import dgca.verifier.app.decoder.cose.DefaultCoseService;
+import dgca.verifier.app.decoder.model.CoseData;
 import dgca.verifier.app.decoder.model.GreenCertificate;
 import dgca.verifier.app.decoder.model.Person;
 import dgca.verifier.app.decoder.model.Vaccination;
 import dgca.verifier.app.decoder.model.VerificationResult;
+import dgca.verifier.app.decoder.prefixvalidation.DefaultPrefixValidationService;
+import dgca.verifier.app.decoder.prefixvalidation.PrefixValidationService;
 import dgca.verifier.app.engine.AffectedFieldsDataRetriever;
 import dgca.verifier.app.engine.CertLogicEngine;
 import dgca.verifier.app.engine.DefaultCertLogicEngine;
@@ -58,6 +70,7 @@ import liquibase.pro.packaged.C;
 import org.aspectj.lang.annotation.Before;
 import org.bouncycastle.jcajce.provider.digest.MD2;
 import org.joda.time.DateTime;
+import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,6 +81,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 class DccValidatorTest {
+    private PrefixValidationService prefixValidationService = new DefaultPrefixValidationService();
+    private Base45Service base45Service = new DefaultBase45Service();
+    private CompressorService compressorService = new DefaultCompressorService();
+    private CoseService coseService = new DefaultCoseService();
+    private CborService cborService = new DefaultCborService();
     private SignerInformationService signerInformationService;
     private BusinessRuleService businessRuleService;
     private DccValidator dccValidator;
@@ -288,6 +306,124 @@ class DccValidatorTest {
         DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
 
         Assert.isTrue(results.size() == 0);
+    }
+
+    @Test
+    void testConcurrentBusinessRule() throws JSONException, JsonProcessingException {
+        VerificationResult result = new VerificationResult();
+        List<ValidationStatusResponse.Result> results = new ArrayList<>();
+        AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
+        accessTokenConditions.setCoa("DE");
+        accessTokenConditions.setRoa("");
+        accessTokenConditions.setValidationClock("2021-08-29T12:00:00+01:00");
+        accessTokenConditions.setValidFrom("2021-01-29T12:00:00+01:00");
+        accessTokenConditions.setValidTo("2021-01-30T12:00:00+01:00");
+        Person p = new Person("WURST", "Wurst", "HANS", "Hans");
+
+        Vaccination v = new Vaccination("", "", "", "", 1, 2, "", "", "", "");
+
+        List<Vaccination> vacs = new ArrayList<>();
+        vacs.add(v);
+        String dccPlain = prefixValidationService.decode("HC1:NCF970%90T9WTWGVLK879%EHLE7A1KW8HX*4.AB3XK3F3D86*743F3ZU5.FK1JC X8Y50.FK6ZK7:EDOLFVC*70B$D%" +
+        " D3IA4W5646646/96OA76KCN9E%961A69L6QW6B46XJCCWENF6OF63W5NW6-96WJCT3E6N8WJC0FD4:473DSDDF+AKG7RCBA69" +
+        "C6A41AZM8JNA5N8LN9VY91OASTA.H9MB8I6A946.JCP9EJY8L/5M/5546.96D46%JCKQE:+9 8D3KC.SC4KCD3DX47B46IL6646" +
+        "I*6..DX%DLPCG/D$2DMIALY8/B9ZJC3/DIUADLFE4F-PDI3D7WERB8YTAUIAI3D1 C5LE6%E$PC5$CUZCY$5Y$5JPCT3E5JDOA7" +
+        "3467463W5WA6:68 GTFHDZUTOZLO2FL7OU9AQUOAR0NXHY78%$8L65Q93Z81AA60$DUF6XF4EJVUXG4UTN*2YG51UM/.2PGO8P" +
+        "I*GS8%LXKBJW8:G6O5",result);
+        byte[] compressedCose = base45Service.decode(dccPlain, result);
+        byte[] cose = compressorService.decode(compressedCose, result);
+        CoseData coseData = coseService.decode(cose, result);
+        GreenCertificateData data = cborService.decodeData(coseData.getCbor(), result);
+        List<Rule> rules = new ArrayList<>();
+        JsonNode  node = new ObjectMapper().readTree("{\"<\":[1,0]}");
+        Rule rule = new Rule("VR-DE-0002",
+                Type.ACCEPTANCE,
+                "1.0.0",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.now().minusDays(400),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                node,
+                "DE",
+                null);
+        node = new ObjectMapper().readTree("{\">\":[1,0]}");
+        Rule rule2 = new Rule("VR-DE-0002",
+                Type.ACCEPTANCE,
+                "1.0.3",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.now().minusDays(400),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                node,
+                "DE",
+                null);
+        node = new ObjectMapper().readTree("{\"+\":[\"+\",\"+\"]}");
+        Rule rule3 = new Rule("VR-DE-0002",
+                Type.ACCEPTANCE,
+                "1.0.2",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.now().minusDays(400),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                node,
+                "DE",
+                null);   
+        node = new ObjectMapper().readTree("{\"+\":[\"+\",\"+\"]}");
+        Rule rule4 = new Rule("VR-DE-0002",
+                Type.ACCEPTANCE,
+                "1.0.4",
+                "1.0.0",
+                "CERTLOGIC",
+                "0.7.5",
+                RuleCertificateType.VACCINATION,
+                new HashMap<>(),
+                ZonedDateTime.parse("2021-09-29T12:00:00+01:00"),
+                ZonedDateTime.now().plusDays(500),
+                new ArrayList<>(),
+                node,
+                "DE",
+                null);  
+            node = new ObjectMapper().readTree("{\"+\":[\"+\",\"+\"]}");
+            Rule rule5 = new Rule("VR-DE-0002",
+                        Type.ACCEPTANCE,
+                        "0.0.8",
+                        "1.0.0",
+                        "CERTLOGIC",
+                        "0.7.5",
+                        RuleCertificateType.VACCINATION,
+                        new HashMap<>(),
+                        ZonedDateTime.now().minusDays(500),
+                        ZonedDateTime.parse("2021-09-29T12:00:00+01:00"),
+                        new ArrayList<>(),
+                        node,
+                        "DE",
+                        null);   
+        rules.add(rule);
+        rules.add(rule2);
+        rules.add(rule3);
+        rules.add(rule4);
+        rules.add(rule5);
+        Map<String, List<String>> valueSets = new HashMap<>();
+
+        RulesCache rulesCache = new BusinessRulesCacheMock(rules);
+        ValueSetCache cache = new ValueSetCacheMock(valueSets);
+        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+
+        Assert.isTrue(results.size() == 1);
+        Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
+        Assert.isTrue(results.get(0).getResult() == ResultType.OK);
     }
 
     private void mockRules() throws IOException {
