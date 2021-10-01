@@ -14,6 +14,7 @@ import dgca.verifier.app.engine.JsonLogicValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 @Configuration
 @RequiredArgsConstructor
@@ -40,5 +41,13 @@ public class DccVerificationConfig {
     CertLogicEngine certLogicEngine(AffectedFieldsDataRetriever affectedFieldsDataRetriever,
                                     JsonLogicValidator jsonLogicValidator) {
         return new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
+    }
+
+    @Bean
+    ResourceBundleMessageSource messageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasenames("messages/dcc");
+        source.setUseCodeAsDefaultMessage(true);
+        return source;
     }
 }

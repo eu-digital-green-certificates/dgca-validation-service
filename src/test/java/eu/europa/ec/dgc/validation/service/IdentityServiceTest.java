@@ -16,7 +16,7 @@ class IdentityServiceTest {
 
     @Test
     void testIdentity() throws Exception {
-        IdentityResponse identity = identityService.getIdentity();
+        IdentityResponse identity = identityService.getIdentity(null, null);
         assertNotNull(identity);
         assertEquals(2, identity.getVerificationMethod().size());
     }

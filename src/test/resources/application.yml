@@ -59,14 +59,10 @@ dgc:
   keyStoreFile: certs/dev-test.jks
   keyStorePassword: dcc
   privateKeyPassword: dcc
-  encAliases: ValidationServiceEncKey-1
-  signAliases: ValidationServiceSignKey-1
-  activeSignKey: ValidationServiceSignKey-1
-  accessKeys: overwrite_my_by_env
-#  decoratorUrl: https://decorator.server/identity
-  accessKeysRefresh:
-    timeInterval: 86400000
-    lockLimit: 3600000
+  encAliases: validationserviceenckey
+  signAliases: validationservicesignkey
+  activeSignKey: validationservicesignkey
+  accessKeys: "bS8D2/Wz5tY=:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIPrtYsW9+Juwp/mt7h8FJ3LgFRIUl2Vlmcl1DUm5gNHl0LnHIL4Jff6mg6yVhehdQiMvkhUtTvmFIUWONSJEnw=="
 
 
 
