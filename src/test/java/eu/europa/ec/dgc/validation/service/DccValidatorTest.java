@@ -60,11 +60,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import liquibase.pro.packaged.C;
 import org.aspectj.lang.annotation.Before;
@@ -73,6 +69,7 @@ import org.joda.time.DateTime;
 import org.json.JSONException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.ResourceBundleMessageSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -106,7 +103,10 @@ class DccValidatorTest {
         certLogicEngine = new DefaultCertLogicEngine(affectedFieldsDataRetriever, jsonLogicValidator);
         ValueSetCache valueSetCache = new DgcgValueSetCache(objectMapper, valueSetService);
         RulesCache rulesCache = new DgcgRulesCache(businessRuleService, objectMapper);
-        dccValidator = new DccValidator(signerInformationService, certLogicEngine, certificateUtils, valueSetCache, rulesCache);
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasenames("messages/dcc");
+        source.setUseCodeAsDefaultMessage(true);
+        dccValidator = new DccValidator(signerInformationService, certLogicEngine, certificateUtils, valueSetCache, rulesCache, source);
         dccValidator.initMapper();
     }
 
@@ -254,7 +254,7 @@ class DccValidatorTest {
 
         RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
-        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+        dccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], rulesCache, cache, Locale.ENGLISH);
 
         Assert.isTrue(results.size() == 1);
         Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
@@ -303,7 +303,7 @@ class DccValidatorTest {
 
         RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
-        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+        dccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], rulesCache, cache, Locale.ENGLISH);
 
         Assert.isTrue(results.size() == 0);
     }
@@ -419,7 +419,7 @@ class DccValidatorTest {
 
         RulesCache rulesCache = new BusinessRulesCacheMock(rules);
         ValueSetCache cache = new ValueSetCacheMock(valueSets);
-        DccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], certLogicEngine, rulesCache, cache);
+        dccValidator.validateRules(data, result, results, accessTokenConditions, new byte[0], rulesCache, cache, Locale.ENGLISH);
 
         Assert.isTrue(results.size() == 1);
         Assert.isTrue(results.get(0).getType() == ResultTypeIdentifier.DestinationAcceptance);
