@@ -13,8 +13,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.joda.time.DateTime;
-
 public class ResultTokenBuilder {
     private final JwtBuilder builder;
     private final JwtBuilder builder2;
