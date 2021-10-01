@@ -86,6 +86,9 @@ public class KeyStoreKeyProvider implements KeyProvider {
                 }
 
                 X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+                if (cert == null) {
+                    throw new DccException(String.format("Certificate %s can not be parsed", alias));
+                }
                 certificates.put(alias, cert);
                 String kid = certificateUtils.getCertKid((X509Certificate) cert);
                 kids.put(alias, kid);
