@@ -50,7 +50,7 @@ public class DccProvisioningController {
             + " Wrong Encryption or any other problem with the encoding")})
     @PostMapping(value = "/validate/{subject}", consumes = MediaType.APPLICATION_JSON_VALUE,
         produces = "application/jwt")
-    public ResponseEntity<String> initValidation(
+    public ResponseEntity<String> validateDcc(
         @Valid @RequestBody DccValidationRequest dccValidationRequest,
         @RequestHeader("Authorization") String accessToken,
         @PathVariable String subject,

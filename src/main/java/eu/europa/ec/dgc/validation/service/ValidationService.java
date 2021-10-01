@@ -45,7 +45,7 @@ public class ValidationService {
     private final AccessTokenParser accessTokenParser;
     private final DccCryptService dccCryptService;
     private final DccSign dccSign;
-    private final FixAccessTokenKeyProvider accessTokenKeyProvider;
+    private final AccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
     private final IdentityService identityService;
 
@@ -54,7 +54,7 @@ public class ValidationService {
      * @param audience audience
      * @param subject subject
      * @param accessTokenCompact accessTokenCompact
-     * @return payload
+     * @return payload or null if validation failed
      */
     public AccessTokenPayload validateAccessToken(String audience, String subject, String accessTokenCompact) {
         if (accessTokenCompact != null && accessTokenCompact.startsWith(TOKEN_PREFIX)) {
@@ -65,7 +65,7 @@ public class ValidationService {
             String kid = (String) token.getHeader().get("kid");
 
             if (kid == null) {
-                log.debug("kid missing");
+                log.warn("revoke access token: kid was not found");
                 return null;
             }
 
@@ -77,22 +77,33 @@ public class ValidationService {
                 case "PS256":
                     break;
                 default: {
-                    log.debug("wrong algorithm");
+                    log.warn("revoke access token: unsupported algorithm");
                     return null;
                 }
             }
-
+            
             Claims claims = (Claims) token.getBody();
 
             if (claims.containsKey("exp")
                 && claims.getExpiration().toInstant().getEpochSecond() < Instant.now().getEpochSecond()) {
-                log.debug("expired");
+                log.warn("revoke access token: expired");
                 return null;
             }
 
             if (claims.containsKey("iat")
                 && claims.getIssuedAt().toInstant().getEpochSecond() > Instant.now().getEpochSecond()) {
-                log.debug("iat in the future");
+                log.warn("revoke access token: iat in the future");
+                return null;
+            }
+
+            if (claims.containsKey("aud")
+                && (claims.getAudience() == null || !claims.getAudience().equals(audience))) {
+                log.warn("revoke access token: aud");
+                return null;
+            }
+
+            if (claims.containsKey("sub") && !subject.equals(claims.getSubject())) {
+                log.warn("revoke access token: sub mismatch");
                 return null;
             }
 
@@ -111,7 +122,7 @@ public class ValidationService {
                     plainToken, accessTokenKeyProvider.getPublicKey(kid));
                 return accessToken;
             } catch (Exception e) {
-                log.debug("token not correctly signed");
+                log.warn("revoke access token: parsing",e);
                 return null;
             }
         }

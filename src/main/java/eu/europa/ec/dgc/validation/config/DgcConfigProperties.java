@@ -39,6 +39,8 @@ public class DgcConfigProperties {
 
     private final GatewayDownload certificatesDownloader = new GatewayDownload();
 
+    private final GatewayDownload accessKeysRefresh = new GatewayDownload();
+
     @Getter
     @Setter
     public static class GatewayDownload {
@@ -59,4 +61,7 @@ public class DgcConfigProperties {
     @Value("${dgc.signAliases}")
     private String[] signAliases;
     private String activeSignKey;
+    @Value("${dgc.accessKeys}")
+    private String[] accessKeys;
+    private String decoratorUrl;
 }

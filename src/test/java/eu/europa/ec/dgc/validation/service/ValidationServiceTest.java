@@ -61,7 +61,6 @@ public class ValidationServiceTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder();
 
     @Test
     void validateDcc() throws Exception {
@@ -69,12 +68,16 @@ public class ValidationServiceTest {
         KeyPairGenerator keyPairGen = KeyPairGenerator.getInstance("EC");
         keyPairGen.initialize(256);
         KeyPair keyPair = keyPairGen.generateKeyPair();
+        String kid = "bS8D2/Wz5tY=";
+        final String audInit = "http://localhost:8080/initialize/"+subject;
+        final String audValidate = "http://localhost:8080/validate/"+subject;
 
         ValidationInitRequest validationInitRequest = new ValidationInitRequest();
         validationInitRequest.setKeyType("EC");
         validationInitRequest.setPubKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
         validationInitRequest.setNonce(Base64.getEncoder().encodeToString(iv));
-        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest, "junit",null,null);
+        ValidationInitResponse initResponse = validationService.initValidation(validationInitRequest, subject,null,null);
+        
         assertNotNull(initResponse);
         System.out.println("init request");
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(validationInitRequest));
@@ -100,10 +103,19 @@ public class ValidationServiceTest {
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dccValidationRequest));
 
-        AccessTokenPayload accessTokenPayload = createAccessTocken();
-        String accessToken = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY), "kid");
+        AccessTokenBuilder accessTokenBuilder = new AccessTokenBuilder();
+        AccessTokenPayload accessTokenPayload = createAccessTocken(audValidate);
+        String accessTokenValidate = accessTokenBuilder.payload(accessTokenPayload).build(parsePrivateKey(EC_PRIVATE_KEY), kid);
 
-        System.out.println("jwt: " + accessToken);
+        AccessTokenBuilder accessTokenBuilderInit = new AccessTokenBuilder();
+        AccessTokenPayload accessTokenPayloadInit = createAccessTocken(audInit);
+        String accessTokenInit = accessTokenBuilderInit.payload(accessTokenPayloadInit).build(parsePrivateKey(EC_PRIVATE_KEY), kid);
+
+        AccessTokenPayload accessTokenValidated = validationService.validateAccessToken(audValidate, subject, "Bearer " + accessTokenValidate);
+        assertNotNull("access token validation failed");
+
+        System.out.println("jwt init: " + accessTokenInit);
+        System.out.println("jwt validate: " + accessTokenValidate);
 
         String resultToken = validationService.validate(dccValidationRequest, accessTokenPayload);
 
@@ -141,7 +153,7 @@ public class ValidationServiceTest {
         return encryptedData.getDataEncrypted();
     }
 
-    private AccessTokenPayload createAccessTocken() throws InvalidKeySpecException, NoSuchAlgorithmException {
+    private AccessTokenPayload createAccessTocken(String aud) throws InvalidKeySpecException, NoSuchAlgorithmException {
         AccessTokenPayload accessTokenPayload = new AccessTokenPayload();
         accessTokenPayload.setSub(subject);
         accessTokenPayload.setIss("iss");
@@ -149,6 +161,7 @@ public class ValidationServiceTest {
         accessTokenPayload.setVersion("1.0");
         accessTokenPayload.setJti(UUID.randomUUID().toString());
         accessTokenPayload.setIat(Instant.now().getEpochSecond());
+        accessTokenPayload.setAud(aud);
         accessTokenPayload.setExp(Instant.now().getEpochSecond() + 356 * 24 * 60);
 
         AccessTokenConditions accessTokenConditions = new AccessTokenConditions();
@@ -174,5 +187,7 @@ public class ValidationServiceTest {
     private String signDcc(byte[] data, PrivateKey privateKey) {
         return dccSign.signDcc(data, privateKey);
     }
+
+
 
 }
