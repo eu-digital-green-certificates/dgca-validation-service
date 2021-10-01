@@ -59,9 +59,9 @@ dgc:
   keyStoreFile: certs/dev-test.jks
   keyStorePassword: dcc
   privateKeyPassword: dcc
-  encAliases: validationserviceenckey
-  signAliases: validationservicesignkey
-  activeSignKey: validationservicesignkey
+  encAliases: ValidationServiceEncKey-1
+  signAliases: ValidationServiceSignKey-1
+  activeSignKey: ValidationServiceSignKey-1
   accessKeys: overwrite_my_by_env
 #  decoratorUrl: https://decorator.server/identity
   accessKeysRefresh:

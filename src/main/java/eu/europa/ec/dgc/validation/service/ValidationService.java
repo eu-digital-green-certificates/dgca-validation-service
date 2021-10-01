@@ -47,6 +47,7 @@ public class ValidationService {
     private final DccSign dccSign;
     private final AccessTokenKeyProvider accessTokenKeyProvider;
     private final TokenBlackListService tokenBlackListService;
+    private final ResultCallbackService resultCallbackService;
     private final IdentityService identityService;
 
     /**
@@ -276,6 +277,10 @@ public class ValidationService {
                 Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
                 keyProvider.getKid(keyProvider.getActiveSignKey()));
+        }
+        if (validationInquiry.getCallbackUrl() != null && validationInquiry.getCallbackUrl().length() > 0
+                && resultToken != null) {
+            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), resultToken);
         }
         return resultToken;
     }
