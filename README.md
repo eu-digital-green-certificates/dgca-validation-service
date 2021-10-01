@@ -42,6 +42,13 @@ The validation has complex work flow that involves
    * [dgca-booking-demo-frontend](https://github.com/eu-digital-green-certificates/dgca-booking-demo-frontend)
    * [dgca-verifier-app-android](https://github.com/eu-digital-green-certificates/dgca-verifier-app-android) - provide dcc
 
+## Crypto Schemes
+
+|Enc Scheme Name|Enc Key|Sig Alg Name|Wallet Public Key|
+|-----------------------|-------|------------|-----------------|
+|RSAOAEPWithSHA256AESCBC|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format|
+|RSAOAEPWithSHA256AESGCM|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format|
+
 ## Development
 
 ### Prerequisites
