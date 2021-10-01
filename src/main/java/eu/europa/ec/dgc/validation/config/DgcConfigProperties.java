@@ -47,7 +47,7 @@ public class DgcConfigProperties {
     }
 
     private long validationExpire = 3600;
-    private long confirmationExpire= 86400;
+    private long confirmationExpire = 86400;
 
     private String serviceUrl;
 
