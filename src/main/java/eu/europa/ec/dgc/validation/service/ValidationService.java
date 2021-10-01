@@ -26,6 +26,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -250,13 +251,18 @@ public class ValidationService {
                 dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()), false);
             resultToken = resultTokenBuilder.build(results, accessToken.getSub(),
                 dgcConfigProperties.getServiceUrl(),
+                accessToken.getConditions().getCategory(),
+                Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
                 keyProvider.getKid(keyProvider.getActiveSignKey()));
             validationInquiry.setValidationResult(resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
         } else {
-            resultToken = resultTokenBuilder.build(null, accessToken.getSub(), dgcConfigProperties.getServiceUrl(),
+            resultToken = resultTokenBuilder.build(null, accessToken.getSub(), 
+                dgcConfigProperties.getServiceUrl(),
+                accessToken.getConditions().getCategory(),
+                Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
                 keyProvider.getKid(keyProvider.getActiveSignKey()));
         }

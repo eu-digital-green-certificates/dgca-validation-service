@@ -1,5 +1,6 @@
 package eu.europa.ec.dgc.validation.token;
 
+import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.restapi.dto.ResultTypeIdentifier;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse.Result.ResultType;
@@ -55,6 +56,8 @@ public class ResultTokenBuilder {
     public String build(List<ValidationStatusResponse.Result> results,
                         String subject,
                         String issuer,
+                        String[] category,
+                        Date expiration,
                         PrivateKey privateKey,
                         String kid) {
 
@@ -66,9 +69,12 @@ public class ResultTokenBuilder {
             .setId(UUID.randomUUID().toString())
             .setHeaderParam("alg", "ES256")
             .setSubject(subject)
+            .setIssuer(issuer)
             .setIssuedAt(Date.from(Instant.now()))
+            .setExpiration(expiration)
             .signWith(SignatureAlgorithm.ES256, privateKey)
             .claim("result", result)
+            .claim("category",category)
             .compact();
 
         return builder.setHeaderParam("kid", kid)
@@ -76,7 +82,9 @@ public class ResultTokenBuilder {
             .setSubject(subject)
             .setIssuer(issuer)
             .setIssuedAt(Date.from(Instant.now()))
+            .setExpiration(expiration)
             .signWith(SignatureAlgorithm.ES256, privateKey)
+            .claim("category",category)
             .claim("confirmation", confirmation)
             .claim("results", results)
             .claim("result", result)
