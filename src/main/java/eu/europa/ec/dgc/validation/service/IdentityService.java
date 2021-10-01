@@ -22,33 +22,41 @@ public class IdentityService {
     private final DgcConfigProperties dgcConfigProperties;
     private final KeyProvider keyProvider;
 
+    private static final String ELEMENT_VERIFICATION_METHOD = "verificationMethod";
+    private static final String VALIDATION_TYPE = "JsonWebKey2020";
+
     /**
      * get identity.
-     * @return IdentityResponse
+     * @param element null or verificationMethod
+     * @param type null or type (always JsonWebKey2020)
+     * @return identity document
      */
-    public IdentityResponse getIdentity() {
+    public IdentityResponse getIdentity(final String element, final String type) {
         IdentityResponse identityResponse = new IdentityResponse();
         String identityId = dgcConfigProperties.getServiceUrl() + "/identity";
         identityResponse.setId(identityId);
         List<VerificationMethod> verificationMethods = new ArrayList<>();
         identityResponse.setVerificationMethod(verificationMethods);
-        for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
-            VerificationMethod verificationMethod = new VerificationMethod();
-            verificationMethod.setId(identityId + "/verificationMethod/JsonWebKey2020#" + keyName);
-            verificationMethod.setController(identityId);
-            verificationMethod.setType("JsonWebKey2020");
-            Certificate certificate = keyProvider.receiveCertificate(keyName);
-            PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
-            try {
-                publicKeyJwk.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-                publicKeyJwk.setKid(keyProvider.getKid(keyName));
-                publicKeyJwk.setAlg(keyProvider.getAlg(keyName));
-                publicKeyJwk.setUse(keyProvider.getKeyUse(keyName).toString());
-            } catch (CertificateEncodingException e) {
-                throw new DccException("can not encode certificate", e);
+        if ((element == null || ELEMENT_VERIFICATION_METHOD.equals(element))
+            && (type == null || VALIDATION_TYPE.equals(type))) {
+            for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
+                VerificationMethod verificationMethod = new VerificationMethod();
+                verificationMethod.setId(identityId + "/verificationMethod/JsonWebKey2020#" + keyName);
+                verificationMethod.setController(identityId);
+                verificationMethod.setType(VALIDATION_TYPE);
+                Certificate certificate = keyProvider.receiveCertificate(keyName);
+                PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
+                try {
+                    publicKeyJwk.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+                    publicKeyJwk.setKid(keyProvider.getKid(keyName));
+                    publicKeyJwk.setAlg(keyProvider.getAlg(keyName));
+                    publicKeyJwk.setUse(keyProvider.getKeyUse(keyName).toString());
+                } catch (CertificateEncodingException e) {
+                    throw new DccException("can not encode certificate", e);
+                }
+                verificationMethod.setPublicKeyJwk(publicKeyJwk);
+                verificationMethods.add(verificationMethod);
             }
-            verificationMethod.setPublicKeyJwk(publicKeyJwk);
-            verificationMethods.add(verificationMethod);
         }
         return identityResponse;
     }
