@@ -26,7 +26,7 @@ public class IdentityService {
 
     private static final String ELEMENT_VERIFICATION_METHOD = "verificationMethod";
     private static final String VALIDATION_TYPE = "JsonWebKey2020";
-    private static final String SCHEME_TYPE = "Scheme2021";
+    private static final String SCHEME_TYPE = "DccEncryptionScheme2021";
 
     /**
      * get identity.
