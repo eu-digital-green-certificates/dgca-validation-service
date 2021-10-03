@@ -27,6 +27,7 @@ public class IdentityService {
     private static final String ELEMENT_VERIFICATION_METHOD = "verificationMethod";
     private static final String VALIDATION_TYPE = "JsonWebKey2020";
     private static final String SCHEME_TYPE = "Scheme2021";
+
     /**
      * get identity.
      * @param element null or verificationMethod
@@ -43,7 +44,7 @@ public class IdentityService {
             && (type == null || VALIDATION_TYPE.equals(type))) {
             for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
                 VerificationMethod verificationMethod = new VerificationMethod();
-                verificationMethod.setId(identityId + "/verificationMethod/"+VALIDATION_TYPE+"#" + keyName);
+                verificationMethod.setId(identityId + "/verificationMethod/" + VALIDATION_TYPE + "#" + keyName);
                 verificationMethod.setController(identityId);
                 verificationMethod.setType(VALIDATION_TYPE);
                 Certificate certificate = keyProvider.receiveCertificate(keyName);
@@ -60,11 +61,11 @@ public class IdentityService {
                 verificationMethods.add(verificationMethod);
             }
             
-            for (String schema : CryptSchemaIdentity.GetCryptSchemes()) {
+            for (String schema : CryptSchemaIdentity.getCryptSchemes()) {
 
                 VerificationMethod verificationMethod = new VerificationMethod();
                 verificationMethod
-                    .setId(identityId + "/verificationMethod/"+SCHEME_TYPE+"#ValidationServiceEncScheme-" + schema);
+                    .setId(identityId + "/verificationMethod/" + SCHEME_TYPE + "#ValidationServiceEncScheme-" + schema);
                 verificationMethod.setController(identityId);
                 verificationMethod.setType(SCHEME_TYPE);
                 final boolean rsa = !schema.startsWith("EC");
@@ -82,8 +83,7 @@ public class IdentityService {
                                                             (rsa && !x.getPublicKeyJwk().getAlg().startsWith("ES"))
                                                         )
                                                         )
-                                                .collect(Collectors.toList()))
-                {
+                                                .collect(Collectors.toList())) {
                     ids.add(vm.getId());
                 }
                 verificationMethod.setVerificationMethods(ids.toArray(new String[0]));
