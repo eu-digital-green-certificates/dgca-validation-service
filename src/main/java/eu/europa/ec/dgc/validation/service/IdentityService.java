@@ -1,7 +1,6 @@
 package eu.europa.ec.dgc.validation.service;
 
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
-import eu.europa.ec.dgc.validation.cryptschemas.CryptSchemaIdentity;
 import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.restapi.dto.IdentityResponse;
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class IdentityService {
     private final DgcConfigProperties dgcConfigProperties;
     private final KeyProvider keyProvider;
+    private final DccCryptService dccCryptService;
 
     private static final String ELEMENT_VERIFICATION_METHOD = "verificationMethod";
     private static final String VALIDATION_TYPE = "JsonWebKey2020";
@@ -40,56 +40,58 @@ public class IdentityService {
         identityResponse.setId(identityId);
         List<VerificationMethod> verificationMethods = new ArrayList<>();
         identityResponse.setVerificationMethod(verificationMethods);
-        if ((element == null || ELEMENT_VERIFICATION_METHOD.equals(element))
-            && (type == null || VALIDATION_TYPE.equals(type))) {
-            for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
-                VerificationMethod verificationMethod = new VerificationMethod();
-                verificationMethod.setId(identityId + "/verificationMethod/" + VALIDATION_TYPE + "#" + keyName);
-                verificationMethod.setController(identityId);
-                verificationMethod.setType(VALIDATION_TYPE);
-                Certificate certificate = keyProvider.receiveCertificate(keyName);
-                PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
-                try {
-                    publicKeyJwk.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
-                    publicKeyJwk.setKid(keyProvider.getKid(keyName));
-                    publicKeyJwk.setAlg(keyProvider.getAlg(keyName));
-                    publicKeyJwk.setUse(keyProvider.getKeyUse(keyName).toString());
-                } catch (CertificateEncodingException e) {
-                    throw new DccException("can not encode certificate", e);
+        if ((element == null || ELEMENT_VERIFICATION_METHOD.equals(element))) {
+            if (type == null || VALIDATION_TYPE.equals(type)) {
+                for (String keyName : keyProvider.getKeyNames(KeyType.All)) {
+                    VerificationMethod verificationMethod = new VerificationMethod();
+                    verificationMethod.setId(identityId + "/verificationMethod/" + VALIDATION_TYPE + "#" + keyName);
+                    verificationMethod.setController(identityId);
+                    verificationMethod.setType(VALIDATION_TYPE);
+                    Certificate certificate = keyProvider.receiveCertificate(keyName);
+                    PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
+                    try {
+                        publicKeyJwk.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+                        publicKeyJwk.setKid(keyProvider.getKid(keyName));
+                        publicKeyJwk.setAlg(keyProvider.getAlg(keyName));
+                        publicKeyJwk.setUse(keyProvider.getKeyUse(keyName).toString());
+                    } catch (CertificateEncodingException e) {
+                        throw new DccException("can not encode certificate", e);
+                    }
+                    verificationMethod.setPublicKeyJwk(publicKeyJwk);
+                    verificationMethods.add(verificationMethod);
                 }
-                verificationMethod.setPublicKeyJwk(publicKeyJwk);
-                verificationMethods.add(verificationMethod);
             }
-            
-            for (String schema : CryptSchemaIdentity.getCryptSchemes()) {
+            if (type == null || SCHEME_TYPE.equals(type)) {
+                for (String schema : dccCryptService.getCryptSchemes()) {
 
-                VerificationMethod verificationMethod = new VerificationMethod();
-                verificationMethod
-                    .setId(identityId + "/verificationMethod/" + SCHEME_TYPE + "#ValidationServiceEncScheme-" + schema);
-                verificationMethod.setController(identityId);
-                verificationMethod.setType(SCHEME_TYPE);
-                final boolean rsa = !schema.startsWith("EC");
-                ArrayList<String> ids = new ArrayList<String>();
-                for (VerificationMethod vm : verificationMethods
-                                                .stream()
-                                                .filter(x -> 
-                                                           x.getPublicKeyJwk() != null 
-                                                        && 
-                                                           x.getPublicKeyJwk().getUse() == "enc" 
-                                                        && 
-                                                        (
-                                                            (!rsa && x.getPublicKeyJwk().getAlg().startsWith("ES"))
-                                                        ||
+                    VerificationMethod verificationMethod = new VerificationMethod();
+                    verificationMethod
+                            .setId(identityId + "/verificationMethod/" + SCHEME_TYPE + "#ValidationServiceEncScheme-"
+                                    + schema);
+                    verificationMethod.setController(identityId);
+                    verificationMethod.setType(SCHEME_TYPE);
+                    final boolean rsa = !schema.startsWith("EC");
+                    ArrayList<String> ids = new ArrayList<String>();
+                    for (VerificationMethod vm : verificationMethods
+                            .stream()
+                            .filter(x ->
+                                    x.getPublicKeyJwk() != null
+                                            &&
+                                            x.getPublicKeyJwk().getUse() == "enc"
+                                            &&
+                                            (
+                                                    (!rsa && x.getPublicKeyJwk().getAlg().startsWith("ES"))
+                                                            ||
                                                             (rsa && !x.getPublicKeyJwk().getAlg().startsWith("ES"))
-                                                        )
-                                                        )
-                                                .collect(Collectors.toList())) {
-                    ids.add(vm.getId());
+                                            )
+                            )
+                            .collect(Collectors.toList())) {
+                        ids.add(vm.getId());
+                    }
+                    verificationMethod.setVerificationMethods(ids.toArray(new String[0]));
+                    verificationMethods.add(verificationMethod);
                 }
-                verificationMethod.setVerificationMethods(ids.toArray(new String[0]));
-                verificationMethods.add(verificationMethod);
             }
-
         }
         return identityResponse;
     }
