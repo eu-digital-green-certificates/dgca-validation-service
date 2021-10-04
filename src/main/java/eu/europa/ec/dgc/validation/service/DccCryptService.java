@@ -7,7 +7,9 @@ import eu.europa.ec.dgc.validation.cryptschemas.RsaOaepWithSha256AesGcm;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,14 @@ public class DccCryptService {
         CryptSchema cryptSchema2 = new RsaOaepWithSha256AesGcm();
         cryptSchemaMap.put(cryptSchema.getEncSchema(), cryptSchema);
         cryptSchemaMap.put(cryptSchema2.getEncSchema(), cryptSchema2);
+    }
+
+    /**
+     * Returns all available Crypto Schemes.
+     * @return List of Crypto Schemes.
+     */
+    public List<String> getCryptSchemes() {
+        return new ArrayList<String>(cryptSchemaMap.keySet());
     }
 
     /**

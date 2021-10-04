@@ -18,6 +18,6 @@ class IdentityServiceTest {
     void testIdentity() throws Exception {
         IdentityResponse identity = identityService.getIdentity(null, null);
         assertNotNull(identity);
-        assertEquals(2, identity.getVerificationMethod().size());
+        assertEquals(4, identity.getVerificationMethod().size());
     }
 }
