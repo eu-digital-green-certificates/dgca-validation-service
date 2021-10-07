@@ -98,7 +98,7 @@ After all containers have started you will be able to reach the application on y
 
 ## Documentation
 
-- [ ] TODO: Documentation
+- [OpenAPI documentation](https://eu-digital-green-certificates.github.io/dgca-validation-service/)
 
 ## Support and feedback
 
