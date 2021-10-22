@@ -236,7 +236,7 @@ public class DccValidator {
             == dgca.verifier.app.decoder.model.CertificateType.TEST) {
             Test testStatement = greenCertificateData.getGreenCertificate().getTests().get(0);
             ZonedDateTime dateOfCollection = toZonedDateTimeOrUtcLocal(testStatement.getDateTimeOfCollection());
-            if (dateOfCollection != null && !dateOfCollection.isBefore(dateOfCollection)) {
+            if (dateOfCollection != null && !dateOfCollection.isBefore(validFrom)) {
                 addResult(results, ValidationStatusResponse.Result.ResultType.NOK,
                     ResultTypeIdentifier.TechnicalVerification, DccValidationMessage.NOTYETVALIDONDATE_TEST, locale);
             }
