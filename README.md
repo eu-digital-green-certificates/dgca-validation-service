@@ -42,6 +42,10 @@ The validation has complex work flow that involves
    * [dgca-booking-demo-frontend](https://github.com/eu-digital-green-certificates/dgca-booking-demo-frontend)
    * [dgca-verifier-app-android](https://github.com/eu-digital-green-certificates/dgca-verifier-app-android) - provide dcc
 
+## Specification Document
+
+https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_traveller-onlinebooking_en.pdf
+
 ## Crypto Schemes
 
 |Enc Scheme Name|Enc Key|Sig Alg Name|Wallet Public Key|
