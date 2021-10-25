@@ -46,6 +46,27 @@ The validation has complex work flow that involves
 
 https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_traveller-onlinebooking_en.pdf
 
+## Performed Checkups
+
+The validation service checks the provided DCC for: 
+
+- Expiration
+- Issuing Date validity
+- Cryptographic validity
+- FNT/GNT/DOB Matching
+- Provided Certificate Type
+- Business Rules
+
+The VS does not perform additional checkups regarding the "category" of the access token, which is depending on the operator of the service to do additional checks or not, if necessary. 
+
+## Confirmation Token
+
+The confirmation token is a signed JWT which confirms the successfull checkup of a DCC associated with a subject. This token can be signed by a self signed certificate which was create especially for this VS instance OR by a CSCA. Which option is choosen depends on the operator. Whatever is chosen, it's recommended to share the VS signer certificate public keys on national lists or to share the Identity Documents URLs of the validation services, for validating confirmation tokens accross all service providers in a decentralized manner. 
+
+## Results
+
+The VS delivers an result OK (all checks passed), NOK (DCC not valid) or CHK (cross check necessary). CHK means in this case to cross check documents and/or request additional RAT or PCR tests, because the VS was not able to check successfully the DCC. Depending on the used additional checks in the VS, controlled by the categories, the CHK value can be used for manual checkups as well. 
+
 ## Public Key Considerations
 
 The public key for the initialization call must be in a PEM format with or without PEM Markers. In the case of apple ios the public key must be converted into DER format at first before generating a PEM out of it (https://github.com/eu-digital-green-certificates/dgca-app-core-ios/blob/main/Sources/Services/X509.swift#L39). Otherwise the key is encoded in ASN1 format and not readable by Javas Bouncy Castle. 
