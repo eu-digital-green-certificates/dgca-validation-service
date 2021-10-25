@@ -55,7 +55,8 @@ The validation service checks the provided DCC for:
 - Cryptographic validity
 - FNT/GNT/DOB Matching
 - Provided Certificate Type
-- Business Rules
+- Category Checks (not implementend)
+- Business Rules 
 
 The VS does not perform additional checkups regarding the "category" of the access token, which is depending on the operator of the service to do additional checks or not, if necessary. 
 
@@ -80,13 +81,15 @@ RSA Keys should have a minimum of 3072 bit according to the RSA recommendation o
 |RSAOAEPWithSHA256AESCBC|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MGF=MGF1, Hash=SHA256| IV=X-Nonce (16 Bytes), must be randomly generated|
 |RSAOAEPWithSHA256AESGCM|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MFG=MGF1, Hash=SHA25| IV=X-Nonce (16 Bytes), randomly generated|
 
+Please note: the encryption schemes were selected in this manner, to support a wide range of devices, programming languages and tools. Embedded encryption schemas like ECIES and similiar can be provided for the future (e.g. Apple IOS Ecies schemes). 
+
 ## Token
 
 Accesstokens must have a valid audience, iat, kid and exp for the call. The kid is checked against the available public keys, which can be loaded from:
 
 - Fixed Provider (Environment Variable DGC_ACCESSKEYS)
 - Identity Document (Environment Variable Decorator URL, dynamically download)
-- Custom Key Provider
+- Custom Key Provider (not implemented yet)
 
 ## Development
 
