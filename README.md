@@ -46,12 +46,26 @@ The validation has complex work flow that involves
 
 https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_traveller-onlinebooking_en.pdf
 
+## Public Key Considerations
+
+The public key for the initialization call must be in a PEM format with or without PEM Markers. In the case of apple ios the public key must be converted into DER format at first before generating a PEM out of it (https://github.com/eu-digital-green-certificates/dgca-app-core-ios/blob/main/Sources/Services/X509.swift#L39). Otherwise the key is encoded in ASN1 format and not readable by Javas Bouncy Castle. 
+
+RSA Keys should have a minimum of 3072 bit according to the RSA recommendation of TLS certificates(https://github.com/eu-digital-green-certificates/dgc-overview/blob/main/guides/certificate-governance.md#requirements-on-tls-upload-and-csca).
+
 ## Crypto Schemes
 
-|Enc Scheme Name|Enc Key|Sig Alg Name|Wallet Public Key|
-|-----------------------|-------|------------|-----------------|
-|RSAOAEPWithSHA256AESCBC|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format|
-|RSAOAEPWithSHA256AESGCM|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format|
+|Enc Scheme Name|Enc Key|Sig Alg Name|Wallet Public Key| Key Encryption Details | DCC Encryption Details|
+|-----------------------|-------|------------|-----------------|---|---|
+|RSAOAEPWithSHA256AESCBC|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MGF=MGF1, Hash=SHA256| IV=X-Nonce (16 Bytes), must be randomly generated|
+|RSAOAEPWithSHA256AESGCM|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MFG=MGF1, Hash=SHA25| IV=X-Nonce (16 Bytes), randomly generated|
+
+## Token
+
+Accesstokens must have a valid audience, iat, kid and exp for the call. The kid is checked against the available public keys, which can be loaded from:
+
+- Fixed Provider (Environment Variable DGC_ACCESSKEYS)
+- Identity Document (Environment Variable Decorator URL, dynamically download)
+- Custom Key Provider
 
 ## Development
 
