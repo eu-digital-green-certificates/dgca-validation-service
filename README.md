@@ -91,6 +91,10 @@ Accesstokens must have a valid audience, iat, kid and exp for the call. The kid 
 - Identity Document (Environment Variable Decorator URL, dynamically download)
 - Custom Key Provider (not implemented yet)
 
+## Key Management
+
+The provided keys in the identity document should be hold in an HSM or any kind of vault (hashicorp, jks etc.). To increase the security it's recommended to rollover the keys for encryption from time to time or provide multiple one in the same time.
+
 ## Development
 
 ### Prerequisites
