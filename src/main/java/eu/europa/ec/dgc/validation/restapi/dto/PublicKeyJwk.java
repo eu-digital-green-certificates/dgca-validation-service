@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class PublicKeyJwk {
-    private String x5c;
+    private String[] x5c;
     private String kid;
     private String alg;
     private String use;

@@ -20,7 +20,9 @@ import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
@@ -35,7 +37,7 @@ import org.springframework.stereotype.Service;
 public class KeyStoreKeyProvider implements KeyProvider {
     private final DgcConfigProperties dgcConfigProperties;
 
-    private final Map<String, Certificate> certificates = new HashMap<>();
+    private final Map<String, List<Certificate>> certificates = new HashMap<>();
     private final Map<String, PrivateKey> privateKeys = new HashMap<>();
     private final Map<String, String> kids = new HashMap<>();
     private final Map<String, String> algs = new HashMap<>();
@@ -89,26 +91,39 @@ public class KeyStoreKeyProvider implements KeyProvider {
                 if (cert == null) {
                     throw new DccException(String.format("Certificate %s can not be parsed", alias));
                 }
-                certificates.put(alias, cert);
-                String kid = certificateUtils.getCertKid((X509Certificate) cert);
-                kids.put(alias, kid);
-                kidToName.put(kid, alias);
 
-                if (cert.getSigAlgOID().contains("1.2.840.113549.1.1.1")) {
-                    algs.put(alias, "RS256");
+                if (alias.contains("_") && this.certificates.containsKey(alias.substring(0, alias.indexOf("_")))) {
+                    String mapAlias = alias.substring(0,alias.indexOf("_"));
+                    List<Certificate> certs = this.certificates.get(mapAlias);
+                    if (certs != null) {
+                        certs.add(cert);
+                    }
                 }
-                if (cert.getSigAlgOID().contains("1.2.840.113549.1.1.10")) {
-                    algs.put(alias, "PS256");
-                }
-                if (cert.getSigAlgOID().contains("1.2.840.10045.4.3.2")) {
-                    algs.put(alias, "ES256");
+                else {
+                    List<Certificate> certs = new ArrayList<>();
+                    certs.add(cert);
+                
+                    certificates.put(alias, certs);
+                    String kid = certificateUtils.getCertKid((X509Certificate) cert);
+                    kids.put(alias, kid);
+                    kidToName.put(kid, alias);
+
+                    if (cert.getSigAlgOID().contains("1.2.840.113549.1.1.1")) {
+                        algs.put(alias, "RS256");
+                    }
+                    if (cert.getSigAlgOID().contains("1.2.840.113549.1.1.10")) {
+                        algs.put(alias, "PS256");
+                    }
+                    if (cert.getSigAlgOID().contains("1.2.840.10045.4.3.2")) {
+                        algs.put(alias, "ES256");
+                    }
                 }
             }
         }
     }
 
     @Override
-    public Certificate receiveCertificate(String keyName) {
+    public List<Certificate> receiveCertificate(String keyName) {
         return certificates.get(keyName);
     }
 

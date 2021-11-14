@@ -47,10 +47,14 @@ public class IdentityService {
                     verificationMethod.setId(identityId + "/verificationMethod/" + VALIDATION_TYPE + "#" + keyName);
                     verificationMethod.setController(identityId);
                     verificationMethod.setType(VALIDATION_TYPE);
-                    Certificate certificate = keyProvider.receiveCertificate(keyName);
+                    List<Certificate> certificate = keyProvider.receiveCertificate(keyName);
                     PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
                     try {
-                        publicKeyJwk.setX5c(Base64.getEncoder().encodeToString(certificate.getEncoded()));
+                        List<String> x5c = new ArrayList<String>();
+                        for (Certificate cert : certificate) {
+                            x5c.add(Base64.getEncoder().encodeToString(cert.getEncoded()));
+                        }
+                        publicKeyJwk.setX5c(x5c.toArray(new String[0])); 
                         publicKeyJwk.setKid(keyProvider.getKid(keyName));
                         publicKeyJwk.setAlg(keyProvider.getAlg(keyName));
                         publicKeyJwk.setUse(keyProvider.getKeyUse(keyName).toString());

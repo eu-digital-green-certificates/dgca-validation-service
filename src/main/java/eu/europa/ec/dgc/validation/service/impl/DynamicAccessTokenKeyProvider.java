@@ -3,6 +3,9 @@ package eu.europa.ec.dgc.validation.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.gson.JsonArray;
+
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.exception.DccException;
 import eu.europa.ec.dgc.validation.service.AccessTokenKeyProvider;
@@ -78,11 +81,11 @@ public class DynamicAccessTokenKeyProvider implements AccessTokenKeyProvider {
                         JsonNode publicKeyJwk = verificationMethod.get("publicKeyJwk");
                         if (publicKeyJwk != null && publicKeyJwk.isObject()) {
                             JsonNode kidNode = publicKeyJwk.get("kid");
-                            JsonNode x5cNode = publicKeyJwk.get("x5c");
+                            ArrayNode x5cNode = (ArrayNode) publicKeyJwk.get("x5c");
                             if (kidNode != null && kidNode.isTextual()
-                                && x5cNode != null && x5cNode.isTextual()) {
+                                && x5cNode != null && x5cNode.isArray()) {
                                 String kid = kidNode.asText();
-                                String x5c = x5cNode.asText();
+                                String x5c = x5cNode.get(0).asText();
                                 importKey(kid, x5c);
                             }
                         }
