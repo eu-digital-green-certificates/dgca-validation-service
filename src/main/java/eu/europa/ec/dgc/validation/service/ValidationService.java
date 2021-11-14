@@ -279,14 +279,17 @@ public class ValidationService {
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
                 keyProvider.getKid(keyProvider.getActiveSignKey()),true);
 
-            validationInquiry.setValidationResult(dgcConfigProperties.isDisableStatusResult()?privacyResultToken:resultToken);
+            validationInquiry.setValidationResult(dgcConfigProperties.isDisableStatusResult() ? privacyResultToken 
+                                                                                              : resultToken);
             validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
             validationStoreService.updateValidation(validationInquiry);
         } 
 
         if (validationInquiry.getCallbackUrl() != null && validationInquiry.getCallbackUrl().length() > 0
-                && resultToken != null && privacyResultToken != null){
-            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), dgcConfigProperties.isDisableStatusResult()? privacyResultToken:resultToken);
+                && resultToken != null && privacyResultToken != null) {
+            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), 
+                                                   dgcConfigProperties.isDisableStatusResult() ? privacyResultToken 
+                                                                                               : resultToken);
         }
         return resultToken;
     }
