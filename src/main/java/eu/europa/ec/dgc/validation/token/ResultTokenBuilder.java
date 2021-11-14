@@ -88,7 +88,7 @@ public class ResultTokenBuilder {
             .signWith(SignatureAlgorithm.ES256, privateKey)
             .claim("category",category)
             .claim("confirmation", confirmation)
-            .claim("results", privacy? new ArrayList<ValidationStatusResponse.Result>(): results)
+            .claim("results", privacy ? new ArrayList<ValidationStatusResponse.Result>() : results)
             .claim("result", result)
             .compact();
     }

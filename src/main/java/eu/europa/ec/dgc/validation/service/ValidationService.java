@@ -1,8 +1,6 @@
 package eu.europa.ec.dgc.validation.service;
 
 import com.nimbusds.jose.jwk.KeyUse;
-
-import eu.europa.ec.dgc.gateway.connector.config.DgcGatewayConnectorConfigProperties;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
@@ -16,7 +14,6 @@ import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJwk;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
-import eu.europa.ec.dgc.validation.service.impl.FixAccessTokenKeyProvider;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import io.jsonwebtoken.Claims;
@@ -26,7 +23,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
