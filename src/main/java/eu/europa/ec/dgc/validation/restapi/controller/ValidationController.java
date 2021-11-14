@@ -113,6 +113,5 @@ public class ValidationController {
             return ResponseEntity.ok(validationInquiry.getValidationResult());
         }
         return responseEntity;
-
     }
 }

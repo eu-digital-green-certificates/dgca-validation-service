@@ -56,6 +56,7 @@ public class DgcConfigProperties {
     private String keyStoreFile;
     private String keyStorePassword;
     private String privateKeyPassword;
+    private boolean disableStatusResult;
     @Value("${dgc.encAliases}")
     private String[] encAliases;
     @Value("${dgc.signAliases}")

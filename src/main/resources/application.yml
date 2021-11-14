@@ -62,6 +62,7 @@ dgc:
   encAliases: ValidationServiceEncKey-1
   signAliases: ValidationServiceSignKey-1
   activeSignKey: ValidationServiceSignKey-1
+  disableStatusResult: true
   accessKeys: overwrite_my_by_env
 #  decoratorUrl: https://decorator.server/identity
   accessKeysRefresh:

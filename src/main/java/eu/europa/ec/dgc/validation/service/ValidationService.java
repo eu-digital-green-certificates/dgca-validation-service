@@ -1,6 +1,8 @@
 package eu.europa.ec.dgc.validation.service;
 
 import com.nimbusds.jose.jwk.KeyUse;
+
+import eu.europa.ec.dgc.gateway.connector.config.DgcGatewayConnectorConfigProperties;
 import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.cryptschemas.EncryptedData;
 import eu.europa.ec.dgc.validation.entity.ValidationInquiry;
@@ -238,7 +240,8 @@ public class ValidationService {
     public String validate(DccValidationRequest dccValidationRequest, AccessTokenPayload accessToken) {
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
-        String resultToken;
+        String resultToken = null;
+        String privacyResultToken = null;
         ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
         if (validationInquiry != null) {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
@@ -261,26 +264,29 @@ public class ValidationService {
 
             List<ValidationStatusResponse.Result> results = dccValidator.validate(
                 dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()), false);
+           
             resultToken = resultTokenBuilder.build(results, accessToken.getSub(),
                 dgcConfigProperties.getServiceUrl(),
                 accessToken.getConditions().getCategory(),
                 Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                keyProvider.getKid(keyProvider.getActiveSignKey()));
-            validationInquiry.setValidationResult(resultToken);
-            validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
-            validationStoreService.updateValidation(validationInquiry);
-        } else {
-            resultToken = resultTokenBuilder.build(null, accessToken.getSub(), 
+                keyProvider.getKid(keyProvider.getActiveSignKey()),false);
+
+            privacyResultToken = resultTokenBuilder.build(results, accessToken.getSub(),
                 dgcConfigProperties.getServiceUrl(),
                 accessToken.getConditions().getCategory(),
                 Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                keyProvider.getKid(keyProvider.getActiveSignKey()));
-        }
+                keyProvider.getKid(keyProvider.getActiveSignKey()),true);
+
+            validationInquiry.setValidationResult(dgcConfigProperties.isDisableStatusResult()?privacyResultToken:resultToken);
+            validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
+            validationStoreService.updateValidation(validationInquiry);
+        } 
+
         if (validationInquiry.getCallbackUrl() != null && validationInquiry.getCallbackUrl().length() > 0
-                && resultToken != null) {
-            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), resultToken);
+                && resultToken != null && privacyResultToken != null){
+            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), dgcConfigProperties.isDisableStatusResult()? privacyResultToken:resultToken);
         }
         return resultToken;
     }
