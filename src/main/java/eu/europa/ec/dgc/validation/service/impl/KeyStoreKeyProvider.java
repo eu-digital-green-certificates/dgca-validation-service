@@ -98,8 +98,7 @@ public class KeyStoreKeyProvider implements KeyProvider {
                     if (certs != null) {
                         certs.add(cert);
                     }
-                }
-                else {
+                } else {
                     List<Certificate> certs = new ArrayList<>();
                     certs.add(cert);
                 
