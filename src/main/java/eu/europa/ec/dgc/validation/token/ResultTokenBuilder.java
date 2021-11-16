@@ -9,6 +9,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.security.PrivateKey;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -59,7 +60,8 @@ public class ResultTokenBuilder {
                         String[] category,
                         Date expiration,
                         PrivateKey privateKey,
-                        String kid) {
+                        String kid,
+                        boolean privacy) {
 
         String result = evaluateResult(results);
 
@@ -86,7 +88,7 @@ public class ResultTokenBuilder {
             .signWith(SignatureAlgorithm.ES256, privateKey)
             .claim("category",category)
             .claim("confirmation", confirmation)
-            .claim("results", results)
+            .claim("results", privacy ? new ArrayList<ValidationStatusResponse.Result>() : results)
             .claim("result", result)
             .compact();
     }

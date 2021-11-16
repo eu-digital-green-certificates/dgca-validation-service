@@ -59,6 +59,7 @@ dgc:
   keyStoreFile: certs/dev-test.jks
   keyStorePassword: dcc
   privateKeyPassword: dcc
+  disableStatusResult: true
   encAliases: ValidationServiceEncKey-1
   signAliases: ValidationServiceSignKey-1
   activeSignKey: ValidationServiceSignKey-1

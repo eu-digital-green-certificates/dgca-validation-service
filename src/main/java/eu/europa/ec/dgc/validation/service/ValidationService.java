@@ -14,7 +14,6 @@ import eu.europa.ec.dgc.validation.restapi.dto.PublicKeyJwk;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitRequest;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationInitResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
-import eu.europa.ec.dgc.validation.service.impl.FixAccessTokenKeyProvider;
 import eu.europa.ec.dgc.validation.token.AccessTokenParser;
 import eu.europa.ec.dgc.validation.token.ResultTokenBuilder;
 import io.jsonwebtoken.Claims;
@@ -24,7 +23,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -238,7 +236,8 @@ public class ValidationService {
     public String validate(DccValidationRequest dccValidationRequest, AccessTokenPayload accessToken) {
         String subject = accessToken.getSub();
         ValidationInquiry validationInquiry = validationStoreService.receiveValidation(subject);
-        String resultToken;
+        String resultToken = null;
+        String privacyResultToken = null;
         ResultTokenBuilder resultTokenBuilder = new ResultTokenBuilder();
         if (validationInquiry != null) {
             if (!tokenBlackListService.checkPutBlacklist(accessToken.getJti(), accessToken.getExp())) {
@@ -261,26 +260,32 @@ public class ValidationService {
 
             List<ValidationStatusResponse.Result> results = dccValidator.validate(
                 dcc, accessToken.getConditions(), AccessTokenType.getTokenForInt(accessToken.getType()), false);
+           
             resultToken = resultTokenBuilder.build(results, accessToken.getSub(),
                 dgcConfigProperties.getServiceUrl(),
                 accessToken.getConditions().getCategory(),
                 Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                keyProvider.getKid(keyProvider.getActiveSignKey()));
-            validationInquiry.setValidationResult(resultToken);
-            validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
-            validationStoreService.updateValidation(validationInquiry);
-        } else {
-            resultToken = resultTokenBuilder.build(null, accessToken.getSub(), 
+                keyProvider.getKid(keyProvider.getActiveSignKey()),false);
+
+            privacyResultToken = resultTokenBuilder.build(results, accessToken.getSub(),
                 dgcConfigProperties.getServiceUrl(),
                 accessToken.getConditions().getCategory(),
                 Date.from(Instant.now().plusSeconds(dgcConfigProperties.getConfirmationExpire())),
                 keyProvider.receivePrivateKey(keyProvider.getActiveSignKey()),
-                keyProvider.getKid(keyProvider.getActiveSignKey()));
-        }
+                keyProvider.getKid(keyProvider.getActiveSignKey()),true);
+
+            validationInquiry.setValidationResult(dgcConfigProperties.isDisableStatusResult() ? privacyResultToken 
+                                                                                              : resultToken);
+            validationInquiry.setValidationStatus(ValidationInquiry.ValidationStatus.READY);
+            validationStoreService.updateValidation(validationInquiry);
+        } 
+
         if (validationInquiry.getCallbackUrl() != null && validationInquiry.getCallbackUrl().length() > 0
-                && resultToken != null) {
-            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), resultToken);
+                && resultToken != null && privacyResultToken != null) {
+            resultCallbackService.scheduleCallback(validationInquiry.getCallbackUrl(), 
+                                                   dgcConfigProperties.isDisableStatusResult() ? privacyResultToken 
+                                                                                               : resultToken);
         }
         return resultToken;
     }
