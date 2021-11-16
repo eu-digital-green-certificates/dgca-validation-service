@@ -94,7 +94,7 @@ public class KeyStoreKeyProvider implements KeyProvider {
 
                 Certificate[] certs = keyStore.getCertificateChain(alias);
 
-                if(certs != null) {
+                if (certs != null) {
                     certificates.put(alias, certs);
                 } else {
                     certificates.put(alias, new Certificate[] { cert });
