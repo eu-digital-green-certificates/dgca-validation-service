@@ -22,15 +22,15 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
         <owasp.version>6.1.6</owasp.version>
-        <spring.boot.version>2.5.3</spring.boot.version>
+        <spring.boot.version>2.5.4</spring.boot.version>
         <spring.cloud.version>2020.0.3</spring.cloud.version>
-        <spring.test.version>5.3.9</spring.test.version>
+        <spring.test.version>5.3.12</spring.test.version>
         <spring.security.version>5.5.1</spring.security.version>
         <lombok.version>1.18.20</lombok.version>
         <liquibase.version>4.4.2</liquibase.version>
         <springdoc.version>1.5.10</springdoc.version>
         <mapstruct.version>1.4.2.Final</mapstruct.version>
-        <junit.version>5.7.2</junit.version>
+        <junit.version>5.8.1</junit.version>
 		<mockito.version>3.11.2</mockito.version>
     	<bcpkix.version>1.68</bcpkix.version>
     	<okhttp.version>4.9.1</okhttp.version>
@@ -39,6 +39,7 @@
         <dgc.lib.version>1.1.3</dgc.lib.version>
         <dgc-certlogic.version>0.0.0-3834d93</dgc-certlogic.version>
         <dgc-decoder.version>0.1</dgc-decoder.version>
+        <sap.cloud.sdk.version>3.57.0</sap.cloud.sdk.version>
         <!-- plugins -->
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.sonar.version>3.9.0.2155</plugin.sonar.version>
@@ -129,7 +130,7 @@
             <dependency>
                 <groupId>com.sap.cloud.sdk</groupId>
                 <artifactId>sdk-bom</artifactId>
-                <version>3.43.0</version>
+                <version>${sap.cloud.sdk.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
