@@ -47,7 +47,7 @@ public class IdentityService {
                     verificationMethod.setId(identityId + "/verificationMethod/" + VALIDATION_TYPE + "#" + keyName);
                     verificationMethod.setController(identityId);
                     verificationMethod.setType(VALIDATION_TYPE);
-                    List<Certificate> certificate = keyProvider.receiveCertificate(keyName);
+                    Certificate[] certificate = keyProvider.receiveCertificate(keyName);
                     PublicKeyJwk publicKeyJwk = new PublicKeyJwk();
                     try {
                         List<String> x5c = new ArrayList<String>();

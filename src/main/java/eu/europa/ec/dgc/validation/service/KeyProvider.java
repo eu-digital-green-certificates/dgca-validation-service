@@ -8,7 +8,7 @@ import java.security.cert.Certificate;
 import java.util.List;
 
 public interface KeyProvider {
-    List<Certificate> receiveCertificate(String keyName);
+    Certificate[] receiveCertificate(String keyName);
 
     PrivateKey receivePrivateKey(String keyName);
 
