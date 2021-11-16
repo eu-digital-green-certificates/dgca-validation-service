@@ -5,9 +5,10 @@ import eu.europa.ec.dgc.validation.entity.KeyType;
 import eu.europa.ec.dgc.validation.entity.KeyUse;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.util.List;
 
 public interface KeyProvider {
-    Certificate receiveCertificate(String keyName);
+    Certificate[] receiveCertificate(String keyName);
 
     PrivateKey receivePrivateKey(String keyName);
 

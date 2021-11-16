@@ -119,7 +119,7 @@ public class ValidationServiceTest {
 
         String resultToken = validationService.validate(dccValidationRequest, accessTokenPayload);
 
-        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.ValidationServiceSignKey)[0]).getPublicKey()).parse(resultToken);
+        Jwt token = Jwts.parser().setSigningKey(keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.ValidationServiceSignKey)[0])[0].getPublicKey()).parse(resultToken);
         System.out.println(token);
 
         ValidationDevRequest validationDevRequest = new ValidationDevRequest();
@@ -145,7 +145,7 @@ public class ValidationServiceTest {
 
     private byte[] encodeDcc(String dcc, DccValidationRequest dccValidationRequest, byte[] iv) {
         EncryptedData encryptedData = dccCryptService.encryptData(dcc.getBytes(StandardCharsets.UTF_8),
-                keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0]).getPublicKey(),
+                keyProvider.receiveCertificate(keyProvider.getKeyNames(KeyType.All)[0])[0].getPublicKey(),
                 RsaOaepWithSha256AesCbc.ENC_SCHEMA, iv);
         dccValidationRequest.setDcc(Base64.getEncoder().encodeToString(encryptedData.getDataEncrypted()));
         dccValidationRequest.setEncKey(Base64.getEncoder().encodeToString(encryptedData.getEncKey()));

@@ -20,7 +20,9 @@ import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.PostConstruct;
@@ -35,7 +37,7 @@ import org.springframework.stereotype.Service;
 public class KeyStoreKeyProvider implements KeyProvider {
     private final DgcConfigProperties dgcConfigProperties;
 
-    private final Map<String, Certificate> certificates = new HashMap<>();
+    private final Map<String, Certificate[]> certificates = new HashMap<>();
     private final Map<String, PrivateKey> privateKeys = new HashMap<>();
     private final Map<String, String> kids = new HashMap<>();
     private final Map<String, String> algs = new HashMap<>();
@@ -89,7 +91,15 @@ public class KeyStoreKeyProvider implements KeyProvider {
                 if (cert == null) {
                     throw new DccException(String.format("Certificate %s can not be parsed", alias));
                 }
-                certificates.put(alias, cert);
+
+                Certificate[] certs = keyStore.getCertificateChain(alias);
+
+                if (certs != null) {
+                    certificates.put(alias, certs);
+                } else {
+                    certificates.put(alias, new Certificate[] { cert });
+                }
+
                 String kid = certificateUtils.getCertKid((X509Certificate) cert);
                 kids.put(alias, kid);
                 kidToName.put(kid, alias);
@@ -108,7 +118,7 @@ public class KeyStoreKeyProvider implements KeyProvider {
     }
 
     @Override
-    public Certificate receiveCertificate(String keyName) {
+    public Certificate[] receiveCertificate(String keyName) {
         return certificates.get(keyName);
     }
 
