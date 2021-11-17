@@ -46,6 +46,8 @@ The validation has complex work flow that involves
 
 https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_traveller-onlinebooking_en.pdf
 
+Note: The document defines in the identity document RFC7517 for x5c, which is an json array instead of an string. The kid is calculated over the first certificate of the chain. 
+
 ## Performed Checkups
 
 The validation service checks the provided DCC for: 
