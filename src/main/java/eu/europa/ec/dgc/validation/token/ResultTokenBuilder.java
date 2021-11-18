@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ResultTokenBuilder {
     private final JwtBuilder builder;
@@ -65,7 +66,11 @@ public class ResultTokenBuilder {
 
         String result = evaluateResult(results);
 
-        results.removeIf(c -> c.getResult() == ResultType.OK);
+        List<ValidationStatusResponse.Result> badResults = results
+            .stream()
+            .filter(r -> r.getResult() != ResultType.OK)
+            .collect(Collectors.toList());
+
 
         String confirmation = builder2.setHeaderParam("kid", kid)
             .setId(UUID.randomUUID().toString())
@@ -88,7 +93,7 @@ public class ResultTokenBuilder {
             .signWith(SignatureAlgorithm.ES256, privateKey)
             .claim("category",category)
             .claim("confirmation", confirmation)
-            .claim("results", privacy ? new ArrayList<ValidationStatusResponse.Result>() : results)
+            .claim("results", privacy ? new ArrayList<ValidationStatusResponse.Result>() : badResults)
             .claim("result", result)
             .compact();
     }
