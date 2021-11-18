@@ -1,6 +1,5 @@
 package eu.europa.ec.dgc.validation.token;
 
-import eu.europa.ec.dgc.validation.config.DgcConfigProperties;
 import eu.europa.ec.dgc.validation.restapi.dto.ResultTypeIdentifier;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse;
 import eu.europa.ec.dgc.validation.restapi.dto.ValidationStatusResponse.Result.ResultType;
