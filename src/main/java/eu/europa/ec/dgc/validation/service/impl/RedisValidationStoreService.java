@@ -117,11 +117,14 @@ public class RedisValidationStoreService implements ValidationStoreService {
     public void updateValidation(ValidationInquiry validationInquiry) {
         try {
             long timeNow = Instant.now().getEpochSecond();
-            stringRedisTemplate.opsForValue().setIfAbsent(KEY_PREFIX + validationInquiry.getSubject(),
-                objectMapper.writeValueAsString(validationInquiry),
+            stringRedisTemplate.opsForValue().setIfPresent(KEY_PREFIX + validationInquiry.getSubject(),
+              encryptPayload(validationInquiry),
                 Duration.ofSeconds(validationInquiry.getExp() - timeNow));
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             throw new DccException("can not serialize ValidationInquiry", e);
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidAlgorithmParameterException
+            | InvalidKeyException | BadPaddingException | IllegalBlockSizeException cryptEx) {
+            throw new DccException("can not encrypt ValidationInquiry", cryptEx);
         }
     }
 
