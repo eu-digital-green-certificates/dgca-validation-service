@@ -97,6 +97,11 @@ Accesstokens must have a valid audience, iat, kid and exp for the call. The kid 
 
 The provided keys in the identity document should be hold in an HSM or any kind of vault (hashicorp, jks etc.). To increase the security it's recommended to rollover the keys for encryption from time to time or provide multiple one in the same time.
 
+## TLS Certificate Rollover
+
+When the validation service is linked in the validation decorator, the TLS certificate is defined there to allow the connection pinning. Is this certificate changed in the future, the decorators must be informed about this change to insert the certificate in the own identity document under "ValidationServiceKey". To establish the rollover, the new service must be added in the "services" section as well as a new service (e.g. ValidationService-5). It's recommended that the wallet app handles this multiple services grouped by validation service URL (sorted by latest service added) to support the rollover. For instance, are three services configured and all of them roll over in the same time. The document should contain 6 validation service definitions with 3 groups of two items. Each couple of items have the same url. In the wallet app, just the three latest should be shown for selection. 
+
+
 ## Development
 
 ### Prerequisites
