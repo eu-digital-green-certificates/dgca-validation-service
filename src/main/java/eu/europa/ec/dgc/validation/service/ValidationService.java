@@ -69,15 +69,19 @@ public class ValidationService {
             }
 
             String alg = (String) token.getHeader().get("alg");
-
-            switch (alg) {
-                case "RS256":
-                case "ES256":
-                case "PS256":
-                    break;
-                default: {
-                    log.warn("revoke access token: unsupported algorithm");
-                    return null;
+            if (alg == null) {
+                log.warn("revoke access token: missing algorithm");
+                return null;
+            } else {
+                switch (alg) {
+                    case "RS256":
+                    case "ES256":
+                    case "PS256":
+                        break;
+                    default: {
+                        log.warn("revoke access token: unsupported algorithm");
+                        return null;
+                    }
                 }
             }
             
