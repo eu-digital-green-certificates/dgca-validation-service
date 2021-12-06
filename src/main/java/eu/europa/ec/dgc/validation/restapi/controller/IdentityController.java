@@ -30,8 +30,10 @@ public class IdentityController {
      * @return identity document
      */
     @Operation(
-        summary = "The identity endpoint provides the validation service identity document which contains the used encryption schemas and the associated keys/verification methods.",
-        description = "The identity document is downloaded by the wallet apps to encrypt the DCC with the right crypto material."
+        summary = "The identity endpoint provides the validation service identity document which contains the used" + 
+                   "encryption schemas and the associated keys/verification methods.",
+        description = "The identity document is downloaded by the wallet apps to encrypt the DCC with the right"+ 
+                    "crypto material."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "OK")})
