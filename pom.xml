@@ -450,20 +450,6 @@
             </plugin>
 
             <!-- UBIRCH -->
-            <plugin>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven-jar-plugin.version}</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.ubirch.Service</mainClass>
-                            <useUniqueVersions>false</useUniqueVersions>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
             <!-- create and/or push the created docker image -->
             <plugin>
                 <groupId>com.spotify</groupId>
