@@ -1,0 +1,15 @@
+spring:
+  h2:
+    console:
+      enabled: false
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DGC_POSTGRES_URL}
+    username: ${DGC_POSTGRES_USERNAME}
+    password: ${DGC_POSTGRES_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  redis:
+    host:  ${DGC_REDIS_URL}
+    port: ${DGC_REDIS_PORT}
+    password: ${DGC_REDIS_PASWORD}
