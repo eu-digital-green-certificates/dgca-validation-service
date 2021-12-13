@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.6</version>
+        <version>2.5.7</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>eu.europa.ec.dgc</groupId>
@@ -24,6 +24,8 @@
         <owasp.version>6.1.6</owasp.version>
         <spring.boot.version>2.5.6</spring.boot.version>
         <spring.cloud.version>2020.0.4</spring.cloud.version>
+	<slf4j.version>1.7.32</slf4j.version>
+        <log4j2.version>2.15.0</log4j2.version>
         <spring.test.version>5.3.12</spring.test.version>
         <spring.security.version>5.6.0</spring.security.version>
         <lombok.version>1.18.20</lombok.version>
