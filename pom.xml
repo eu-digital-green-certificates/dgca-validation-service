@@ -160,11 +160,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-			<dependency>
-    			<groupId>org.apache.logging.log4j</groupId>
-    			<artifactId>log4j-api</artifactId>
-    			<version>2.15.0</version>
-  			</dependency>
         </dependencies>
     </dependencyManagement>
 
