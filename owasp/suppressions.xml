@@ -15,8 +15,7 @@
     <cve>CVE-2020-13943</cve>
   </suppress>
   <suppress>
-    <!-- spring-boot and spring are excluded from cfenv artifact. Related issues can be omitted. -->
-    <notes><![CDATA[file name: java-cfenv-boot-2.3.0.jar]]></notes>
+    <notes>spring-boot and spring are excluded from cfenv artifact. Related issues can be omitted.</notes>
     <sha1>da214a6f44ee5811c97f3b53a6dda31edf25ac9e</sha1>
     <cve>CVE-2016-9878</cve>
     <cve>CVE-2018-1270</cve>
@@ -25,7 +24,11 @@
     <cve>CVE-2020-5421</cve>
   </suppress>
   <suppress>
-    <!--  Vulnerability impacts WebFlux apps only and can be ignored here.  -->
+    <notes>Vulnerability impacts WebFlux apps only and can be ignored here.</notes>
     <cve>CVE-2021-22118</cve>
+  </suppress>
+  <suppress>
+    <notes>H2 is only used for Unit Testing. Version 2.x includes major breaking changes.</notes>
+    <cve>CVE-2021-23463</cve>
   </suppress>
 </suppressions>
