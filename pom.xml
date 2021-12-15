@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.7</version>
+        <version>2.6.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>eu.europa.ec.dgc</groupId>
@@ -21,27 +21,27 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
-        <owasp.version>6.1.6</owasp.version>
-        <spring.boot.version>2.5.7</spring.boot.version>
-        <spring.cloud.version>2020.0.4</spring.cloud.version>
+        <owasp.version>6.5.0</owasp.version>
+        <spring.boot.version>2.6.1</spring.boot.version>
+        <spring.cloud.version>2021.0.0</spring.cloud.version>
         <spring.test.version>5.3.12</spring.test.version>
         <spring.security.version>5.6.0</spring.security.version>
-        <lombok.version>1.18.20</lombok.version>
-        <liquibase.version>4.4.2</liquibase.version>
-        <springdoc.version>1.5.10</springdoc.version>
+        <lombok.version>1.18.22</lombok.version>
+        <liquibase.version>4.6.2</liquibase.version>
+        <springdoc.version>1.6.0</springdoc.version>
         <mapstruct.version>1.4.2.Final</mapstruct.version>
         <junit.version>5.8.1</junit.version>
-		<mockito.version>3.11.2</mockito.version>
-    	<bcpkix.version>1.68</bcpkix.version>
+	<mockito.version>4.1.0</mockito.version>
+    	<bcpkix.version>1.70</bcpkix.version>
     	<okhttp.version>4.9.1</okhttp.version>
-    	<shedlock.version>4.25.0</shedlock.version>
+    	<shedlock.version>4.30.0</shedlock.version>
         <nimbusds.version>9.9.2</nimbusds.version>
-        <dgc.lib.version>1.1.4</dgc.lib.version>
+        <dgc.lib.version>1.1.7</dgc.lib.version>
         <dgc-certlogic.version>0.0.0-3834d93</dgc-certlogic.version>
         <dgc-decoder.version>0.1</dgc-decoder.version>
         <sap.cloud.sdk.version>3.57.0</sap.cloud.sdk.version>
 	<slf4j.version>1.7.32</slf4j.version>
-        <log4j2.version>2.15.0</log4j2.version>    
+        <log4j2.version>2.16.0</log4j2.version>    
         <!-- plugins -->
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.sonar.version>3.9.0.2155</plugin.sonar.version>
@@ -121,7 +121,7 @@
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-openfeign-dependencies</artifactId>
-                <version>3.0.5</version>
+                <version>3.1.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -192,7 +192,46 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+
+        <!-- Explicitly Include Netty Transport 4.1.72 because auf CVE-2021-43797 -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-handler</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-common</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-buffer</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-codec</artifactId>
+            <version>4.1.72.Final</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
