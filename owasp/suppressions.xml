@@ -31,4 +31,7 @@
     <notes>H2 is only used for Unit Testing. Version 2.x includes major breaking changes.</notes>
     <cve>CVE-2021-23463</cve>
   </suppress>
+  <suppress>
+    <notes>This CVE matches incorrectly because of term redis within spring-data-redis package</notes>
+    <cve>CVE-2021-32626</cve>
 </suppressions>
