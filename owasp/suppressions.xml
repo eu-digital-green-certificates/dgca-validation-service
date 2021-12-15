@@ -34,4 +34,5 @@
   <suppress>
     <notes>This CVE matches incorrectly because of term redis within spring-data-redis package</notes>
     <cve>CVE-2021-32626</cve>
+  </suppress>
 </suppressions>
