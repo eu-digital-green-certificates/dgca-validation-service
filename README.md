@@ -30,12 +30,12 @@
 
 This repository contains the source code of the EU Digital COVID Certificate Validation Service.
 
-Validation service can validate eu digital covid certificates for travel and booking services 
+The validation service can validate EU Digital Covid Certificates for travel and booking services 
 using business rules from 
 [dgca-businessrule-service](https://github.com/eu-digital-green-certificates/dgca-businessrule-service) and
 certificates from [dgca-verifier-service](https://github.com/eu-digital-green-certificates/dgca-verifier-service).
 
-The validation has complex work flow that involves
+The validation has a complex work flow that involves
 
    * [dgca-validation-decorator](https://github.com/eu-digital-green-certificates/dgca-validation-decorator) - additional service on travel system 
    * [dgca-booking-demo](https://github.com/eu-digital-green-certificates/dgca-booking-demo) - travel system mock
@@ -46,7 +46,7 @@ The validation has complex work flow that involves
 
 https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_traveller-onlinebooking_en.pdf
 
-Note: The document defines in the identity document RFC7517 for x5c, which is an json array instead of an string. The kid is calculated over the first certificate of the chain. 
+Note: The document defines in the identity document RFC7517 for x5c, which is a json array instead of a string. The kid is calculated over the first certificate of the chain. 
 
 ## Performed Checkups
 
@@ -57,24 +57,24 @@ The validation service checks the provided DCC for:
 - Cryptographic validity
 - FNT/GNT/DOB Matching
 - Provided Certificate Type
-- Category Checks (not implementend)
+- Category Checks (not implemented)
 - Business Rules 
 
 The VS does not perform additional checkups regarding the "category" of the access token, which is depending on the operator of the service to do additional checks or not, if necessary. 
 
 ## Confirmation Token
 
-The confirmation token is a signed JWT which confirms the successfull checkup of a DCC associated with a subject. This token can be signed by a self signed certificate which was create especially for this VS instance OR by a CSCA. Which option is choosen depends on the operator. Whatever is chosen, it's recommended to share the VS signer certificate public keys on national lists or to share the Identity Documents URLs of the validation services, for validating confirmation tokens accross all service providers in a decentralized manner. 
+The confirmation token is a signed JWT which confirms the successful checkup of a DCC associated with a subject. This token can be signed by a self signed certificate which was created especially for this VS instance OR by a CSCA. Which option is chosen depends on the operator. Whatever is chosen, it's recommended to share the VS signer certificate public keys on national lists or to share the Identity Documents URLs of the validation services, for validating confirmation tokens across all service providers in a decentralized manner. 
 
 ## Results
 
-The VS delivers an result OK (all checks passed), NOK (DCC not valid) or CHK (cross check necessary). CHK means in this case to cross check documents and/or request additional RAT or PCR tests, because the VS was not able to check successfully the DCC. Depending on the used additional checks in the VS, controlled by the categories, the CHK value can be used for manual checkups as well. 
+The VS delivers a result OK (all checks passed), NOK (DCC not valid) or CHK (cross check necessary). CHK means in this case to cross check documents and/or request additional RAT or PCR tests, because the VS was not able to check the DCC successfully. Depending on the used additional checks in the VS, controlled by the categories, the CHK value can be used for manual checkups as well. 
 
 ## Public Key Considerations
 
-The public key for the initialization call must be in a PEM format with or without PEM Markers. In the case of apple ios the public key must be converted into DER format at first before generating a PEM out of it (https://github.com/eu-digital-green-certificates/dgca-app-core-ios/blob/main/Sources/Services/X509.swift#L39). Otherwise the key is encoded in ASN1 format and not readable by Javas Bouncy Castle. 
+The public key for the initialization call must be in a PEM format with or without PEM Markers. In the case of Apple iOS the public key must be converted into DER format at first before generating a PEM out of it (https://github.com/eu-digital-green-certificates/dgca-app-core-ios/blob/main/Sources/Services/X509.swift#L39). Otherwise the key is encoded in ASN1 format and not readable by Java's Bouncy Castle. 
 
-RSA Keys should have a minimum of 3072 bit according to the RSA recommendation of TLS certificates(https://github.com/eu-digital-green-certificates/dgc-overview/blob/main/guides/certificate-governance.md#requirements-on-tls-upload-and-csca).
+RSA Keys should have a minimum of 3072 bits according to the RSA recommendation of TLS certificates (https://github.com/eu-digital-green-certificates/dgc-overview/blob/main/guides/certificate-governance.md#requirements-on-tls-upload-and-csca).
 
 ## Crypto Schemes
 
@@ -83,7 +83,7 @@ RSA Keys should have a minimum of 3072 bit according to the RSA recommendation o
 |RSAOAEPWithSHA256AESCBC|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MGF=MGF1, Hash=SHA256| IV=X-Nonce (16 Bytes), must be randomly generated|
 |RSAOAEPWithSHA256AESGCM|Mandatory, minimum 32 bytes  |SHA256withECDSA|ECDSA Key, secp256r1, x.509 PEM Format| Mode=OAEP, MFG=MGF1, Hash=SHA25| IV=X-Nonce (16 Bytes), randomly generated|
 
-Please note: the encryption schemes were selected in this manner, to support a wide range of devices, programming languages and tools. Embedded encryption schemas like ECIES and similiar can be provided for the future (e.g. Apple IOS Ecies schemes). 
+Please note: the encryption schemes were selected in this manner, to support a wide range of devices, programming languages and tools. Embedded encryption schemas like ECIES and similar can be provided for the future (e.g. Apple iOS Ecies schemes). 
 
 ## Token
 
@@ -95,7 +95,7 @@ Accesstokens must have a valid audience, iat, kid and exp for the call. The kid 
 
 ## Key Management
 
-The provided keys in the identity document should be hold in an HSM or any kind of vault (hashicorp, jks etc.). To increase the security it's recommended to rollover the keys for encryption from time to time or provide multiple one in the same time.
+The provided keys in the identity document should be held in an HSM or any kind of vault (hashicorp, jks etc.). To increase the security it's recommended to rollover the keys for encryption from time to time or provide multiple ones in the same time.
 
 ## Encryption Key Selection
 
@@ -104,7 +104,7 @@ To select the right key for encryption, a wallet app should search for "type": "
 
 ## TLS Certificate Rollover
 
-When the validation service is linked in the validation decorator, the TLS certificate is defined there to allow the connection pinning. Is this certificate changed in the future, the decorators must be informed about this change to insert the certificate in the own identity document under "ValidationServiceKey". To establish the rollover, the new service must be added in the "services" section as well as a new service (e.g. ValidationService-5). It's recommended that the wallet app handles this multiple services grouped by validation service URL (sorted by latest service added) to support the rollover. For instance, are three services configured and all of them roll over in the same time. The document should contain 6 validation service definitions with 3 groups of two items. Each couple of items have the same url. In the wallet app, just the three latest should be shown for selection. 
+When the validation service is linked in the validation decorator, the TLS certificate is defined there to allow the connection pinning. Is this certificate changed in the future, the decorators must be informed about this change to insert the certificate in the own identity document under "ValidationServiceKey". To establish the rollover, the new service must be added in the "services" section as well as a new service (e.g. ValidationService-5). It's recommended that the wallet app handles these multiple services grouped by validation service URL (sorted by latest service added) to support the rollover. For instance, are three services configured and all of them roll over in the same time. The document should contain 6 validation service definitions with 3 groups of two items. Each couple of items have the same url. In the wallet app, just the three latest should be shown for selection. 
 
 
 ## Development
@@ -114,12 +114,12 @@ When the validation service is linked in the validation decorator, the TLS certi
 - [Open JDK 11](https://openjdk.java.net)
 - [Maven](https://maven.apache.org)
 - [Docker](https://www.docker.com)
-- Authenticate to [Github Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
+- Authenticate to [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
 
 #### Authenticating in to GitHub Packages
 
-As some of the required libraries (and/or versions are pinned/available only from GitHub Packages) You need to authenticate
-to [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry)
+As some of the required libraries (and/or versions are pinned/available only from GitHub Packages) you need to authenticate
+to [GitHub Packages](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry).
 The following steps need to be followed
 
 - Create [PAT](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token) with scopes:
