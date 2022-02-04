@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.2</version>
+        <version>2.6.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>eu.europa.ec.dgc</groupId>
@@ -22,7 +22,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- dependencies -->
         <owasp.version>6.5.3</owasp.version>
-        <spring.boot.version>2.6.2</spring.boot.version>
+        <spring.boot.version>2.6.3</spring.boot.version>
         <spring.cloud.version>2021.0.0</spring.cloud.version>
         <spring.test.version>5.3.12</spring.test.version>
         <spring.security.version>5.6.0</spring.security.version>
@@ -31,7 +31,7 @@
         <springdoc.version>1.6.0</springdoc.version>
         <mapstruct.version>1.4.2.Final</mapstruct.version>
         <junit.version>5.8.1</junit.version>
-	<mockito.version>4.1.0</mockito.version>
+        <mockito.version>4.1.0</mockito.version>
     	<bcpkix.version>1.70</bcpkix.version>
     	<okhttp.version>4.9.1</okhttp.version>
     	<shedlock.version>4.30.0</shedlock.version>
@@ -41,7 +41,7 @@
         <dgc-decoder.version>1.0.2</dgc-decoder.version>
         <sap.cloud.sdk.version>3.57.0</sap.cloud.sdk.version>
         <h2.version>2.1.210</h2.version>
-	    <slf4j.version>1.7.32</slf4j.version> 
+	    <slf4j.version>1.7.32</slf4j.version>
         <!-- plugins -->
         <plugin.checkstyle.version>3.1.2</plugin.checkstyle.version>
         <plugin.sonar.version>3.9.0.2155</plugin.sonar.version>
@@ -171,9 +171,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
