@@ -308,6 +308,7 @@ public class ValidationService {
             PublicKey publicKey = kf.generatePublic(spec);
             return dccSign.verifySignature(data, signature, publicKey);
         } catch (Exception e) {
+            log.debug(e.getMessage());
             return false;
         }
     }
