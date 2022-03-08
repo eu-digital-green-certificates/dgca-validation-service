@@ -27,7 +27,7 @@
         <spring.test.version>5.3.12</spring.test.version>
         <spring.security.version>5.6.0</spring.security.version>
         <lombok.version>1.18.22</lombok.version>
-        <liquibase.version>4.6.2</liquibase.version>
+        <liquibase.version>4.8.0</liquibase.version>
         <springdoc.version>1.6.0</springdoc.version>
         <mapstruct.version>1.4.2.Final</mapstruct.version>
         <junit.version>5.8.1</junit.version>
